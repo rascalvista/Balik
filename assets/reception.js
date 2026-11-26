@@ -21,20 +21,74 @@ let hard = false;
 let current;
 let phase;
 let retryTimer;
+const SoundContext = window.AudioContext || window.webkitAudioContext;
 let audioContext;
 let soundMixer;
+let musicBuffer;
+let musicVoice;
 const tones = new Set();
 
-function beep(correct) {
-  if (!balikSound.isPageActive()) return;
-  try {
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      soundMixer = balikSound.createMixer(audioContext, () => {
-        for (const tone of tones) tone.stop();
-      });
+function stopMusic() {
+  const voice = musicVoice;
+  musicVoice = null;
+  voice?.source?.stop();
+}
+
+function startMusic() {
+  if (!audioContext || musicVoice || phase === 'departed' || !balikSound.isPageActive()) return;
+  const voice = {};
+  musicVoice = voice;
+  musicBuffer ??= fetch('../audio/reception-jazz.mp3')
+    .then(response => {
+      if (!response.ok) throw new Error('Reception music failed to load');
+      return response.arrayBuffer();
+    })
+    .then(bytes => audioContext.decodeAudioData(bytes))
+    .catch(() => {
+      musicBuffer = undefined;
+      return null;
+    });
+
+  musicBuffer.then(buffer => {
+    if (musicVoice !== voice) return;
+    if (!buffer) {
+      musicVoice = null;
+      return;
     }
-    audioContext.resume().catch(() => {});
+
+    const source = audioContext.createBufferSource();
+    const gain = audioContext.createGain();
+    const now = audioContext.currentTime;
+    source.buffer = buffer;
+    source.loop = true;
+    source.connect(gain).connect(soundMixer.music);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(.24, now + .45);
+    voice.source = source;
+    source.onended = () => {
+      source.disconnect();
+      gain.disconnect();
+    };
+    source.start(now);
+  });
+}
+
+function activateAudio() {
+  if (!balikSound.isPageActive()) return;
+  if (!audioContext) {
+    audioContext = new SoundContext();
+    soundMixer = balikSound.createMixer(audioContext, () => {
+      stopMusic();
+      for (const tone of tones) tone.stop();
+    });
+  }
+  if (audioContext.state !== 'running') audioContext.resume().catch(() => {});
+  startMusic();
+}
+
+function beep(correct) {
+  if (!audioContext || !balikSound.isPageActive()) return;
+  try {
     const oscillator = audioContext.createOscillator();
     const gain = audioContext.createGain();
     oscillator.connect(gain);
@@ -99,6 +153,7 @@ function next(retry = false) {
   } else {
     dialog.textContent = '„Najděte mi doklady hosta. ' + rules + ' Za pomoc vám dám tlačítko č. 1.“';
   }
+  startMusic();
 }
 
 cases.forEach((suitcase, index) => {
@@ -151,11 +206,22 @@ reward.addEventListener('click', () => {
   dialog.textContent = '„Díky! Konečně do prvního patra.“';
 });
 
-lift.addEventListener('click', () => show('1 – Kuchyně odemčena.', [['Hrát znovu', () => next()]]));
+lift.addEventListener('click', () => {
+  phase = 'departed';
+  stopMusic();
+  show('1 – Kuchyně odemčena.', [['Hrát znovu', () => next()]]);
+});
 find('.reset').addEventListener('click', () => next());
 find('.back').addEventListener('click', () => {
+  stopMusic();
   if (document.referrer && new URL(document.referrer).origin === location.origin) history.back();
   else location.href = '../';
 });
+if (SoundContext) {
+  document.addEventListener('click', activateAudio, true);
+  window.addEventListener('pageshow', event => {
+    if (event.persisted && audioContext) activateAudio();
+  });
+}
 balikSound.bindSpeaker(sound, {painted: true});
 next();
