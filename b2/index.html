@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spěchá! B2</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #10171e;
+      color: #e9d9b6;
+      font: 16px/1.45 monospace;
+    }
+    main {
+      width: min(100%, 860px);
+      margin: 0 auto;
+      padding: 12px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      color: #e4bd60;
+      font-size: clamp(21px, 4.8vw, 28px);
+    }
+    .parking { position: relative; }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #151d24;
+      image-rendering: pixelated;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas.dragging { cursor: grabbing; }
+    .message {
+      margin: 10px 0;
+      padding: 10px 12px;
+      background: #202a33;
+      border-left: 4px solid #d6ac56;
+      font-size: clamp(14px, 2.8vw, 16px);
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    button, .next-level {
+      min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid #7d7156;
+      border-radius: 4px;
+      background: #28343e;
+      color: #f2d38b;
+      font: bold 15px/1.4 monospace;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    button:disabled { cursor: default; opacity: .55; }
+    button:focus-visible, .next-level:focus-visible {
+      outline: 2px solid #f2c65c;
+      outline-offset: 3px;
+    }
+    .primary {
+      margin-inline-start: auto;
+      background: #d6ac56;
+      color: #18232a;
+    }
+    .next-level {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+    }
+    .trunk {
+      position: absolute;
+      left: 30.7%;
+      top: 43.8%;
+      width: 7.8%;
+      height: 8.8%;
+      min-height: 0;
+      padding: 0;
+      border: 2px solid #f2c65c;
+      border-radius: 3px;
+      background: #f2c65c23;
+      box-shadow: 0 0 12px #f2c65c7c;
+    }
+    .trunk::before {
+      position: absolute;
+      content: "";
+      inset: -7px;
+    }
+    [hidden] { display: none; }
+  </style>
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>Spěchá! / B2</h1>
+    <div class="parking">
+      <canvas id="parking" width="450" height="338" aria-label="Parkovací rébus">
+        Odsuň auta z dráhy červeného vozu a vyjeď s ním doleva.
+      </canvas>
+      <button class="trunk" id="trunk" type="button" aria-label="Otevřít kufr" hidden></button>
+    </div>
+    <p class="message" id="message" role="status"></p>
+    <div class="controls">
+      <button id="undo" type="button" disabled>Zpět</button>
+      <button id="reset" type="button">Reset</button>
+      <span id="count">Tahů: 0</span>
+      <button class="primary" id="use" type="button" hidden>Použít tlačítko B1</button>
+      <a class="primary next-level" id="next-level" href="../" hidden>Pokračovat do B1</a>
+    </div>
+  </main>
+</body>
+</html>
