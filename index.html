@@ -414,10 +414,10 @@ let phase = 'idle';
 let epoch = 0;
 
 const soundLevels = {
-  fluorescent: .063, basement: .19, drop: .23, click: .28, valve: .32,
+  fluorescent: .045, 'curious-theme': .19, drop: .23, click: .28, valve: .32,
   steam: .36, motor: .35, explosion: .8, glass: .65, ding: .29, music: .32
 };
-const roomTracks = ['fluorescent', 'basement'];
+const roomTracks = ['fluorescent', 'curious-theme'];
 const soundBytes = new Map(Object.keys(soundLevels).map(name => [
   name, fetch('audio/' + name + '.mp3')
     .then(response => response.ok ? response.arrayBuffer() : null)

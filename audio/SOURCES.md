@@ -14,4 +14,4 @@ Všechny použité nahrávky mají licenci [CC0 1.0](https://creativecommons.org
 | `motor.mp3` | soundjoao, [Motor Loop 2.wav](https://freesound.org/people/soundjoao/sounds/325810/) |
 | `ding.mp3` | XfiXy8, [Elevator Ding.wav](https://freesound.org/people/XfiXy8/sounds/467299/) |
 | `music.mp3` | congusbongus, [Two Left Socks](https://opengameart.org/content/two-left-socks) |
-| `basement.mp3` | yd, [Insistent: background loop](https://opengameart.org/content/insistent-background-loop) |
+| `curious-theme.mp3` | emanresU, [8-Bit Curious Theme](https://opengameart.org/content/8-bit-curious-theme) |
