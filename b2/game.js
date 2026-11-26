@@ -16,12 +16,12 @@ const vehicles = [
   {x: 0, y: 4, length: 2, axis: 'v', image: 'car-06.png'},
   {x: 5, y: 0, length: 2, axis: 'v', image: 'car-03.png'}
 ];
-const board = {x: 156, y: 64, cell: 40, size: 6};
+const board = {x: 188, y: 76, cell: 36, size: 6};
 const targetCar = 0;
 const door = {x: 44, y: 93, width: 46, height: 50};
 const carInset = 3;
-const exitDistance = 2;
-const laneLeft = board.x - exitDistance * board.cell;
+const laneLeft = 109;
+const exitDistance = (board.x - laneLeft) / board.cell;
 const laneTop = board.y + vehicles[targetCar].y * board.cell;
 const parkedMessage = 'Ve výtahu chybí všechna tlačítka. Portýr říkal, že správce má vždycky jedno rezervní v kufru auta. ' +
   'Jenže auta jsou tak těsně zaparkovaná, že kufr nejde otevřít. A já strašně spěchám! ' +
@@ -55,7 +55,10 @@ function placeControl(button, {x, y, width, height}) {
 }
 
 placeControl(trunk, {x: laneLeft, y: laneTop, width: board.cell, height: board.cell});
-placeControl(pickup, {x: laneLeft + 3, y: laneTop + 3, width: 34, height: 34});
+placeControl(pickup, {
+  x: laneLeft + carInset, y: laneTop + carInset,
+  width: board.cell - 2 * carInset, height: board.cell - 2 * carInset
+});
 placeControl(elevatorEntry, door);
 
 let positions;
@@ -67,6 +70,7 @@ let snap = null;
 let exitStarted = 0;
 let doorStarted = null;
 let frame = null;
+let floorTexture;
 
 function requestDraw() {
   if (frame === null) frame = requestAnimationFrame(draw);
@@ -273,6 +277,47 @@ function drawDoors(progress) {
   context.restore();
 }
 
+function drawParkingLines() {
+  if (!floorTexture) {
+    // Mirror a strip of the original bare asphalt to hide its smaller grid.
+    const sample = document.createElement('canvas');
+    const width = 24;
+    const height = 92;
+    sample.width = width * 2;
+    sample.height = height;
+    const texture = sample.getContext('2d');
+    texture.drawImage(background, 117, 190, width, height, 0, 0, width, height);
+    texture.translate(sample.width, 0);
+    texture.scale(-1, 1);
+    texture.drawImage(background, 117, 190, width, height, 0, 0, width, height);
+    floorTexture = context.createPattern(sample, 'repeat');
+  }
+
+  const side = board.cell * board.size;
+  const right = board.x + side;
+  const bottom = board.y + side;
+  context.fillStyle = floorTexture;
+  context.fillRect(board.x, board.y, side, side);
+  context.fillRect(laneLeft, laneTop, board.x - laneLeft, board.cell);
+
+  context.fillStyle = '#8797a186';
+  for (let i = 0; i <= board.size; i++) {
+    const y = board.y + i * board.cell;
+    context.fillRect(board.x, y, side, 1);
+    const x = board.x + i * board.cell;
+    if (i === 0) {
+      context.fillRect(x, board.y, 1, laneTop - board.y);
+      context.fillRect(x, laneTop + board.cell, 1, bottom - laneTop - board.cell);
+    } else {
+      context.fillRect(x, board.y, 1, side);
+    }
+  }
+  context.fillStyle = '#c3a568a6';
+  const laneLength = board.x - laneLeft;
+  context.fillRect(laneLeft, laneTop, laneLength, 1);
+  context.fillRect(laneLeft, laneTop + board.cell, laneLength, 1);
+}
+
 function draw(time) {
   frame = null;
   if (snap) {
@@ -310,13 +355,10 @@ function draw(time) {
   }
 
   context.clearRect(0, 0, canvas.width, canvas.height);
-  if (background.naturalWidth) {
+  if (background.complete && background.naturalWidth) {
     context.drawImage(background, 0, 0);
     if (doorProgress > 0) drawDoors(doorProgress);
-    // Reuse the floor markings from the supplied garage art at the larger scale.
-    context.drawImage(background, 109, 148, 105, 32, laneLeft, laneTop, board.x - laneLeft, board.cell);
-    const boardSide = board.size * board.cell;
-    context.drawImage(background, 214, 88, 180, 180, board.x, board.y, boardSide, boardSide);
+    drawParkingLines();
   }
   for (const [index, image] of carImages.entries()) {
     if (!image.naturalWidth) continue;

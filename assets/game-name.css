@@ -58,6 +58,19 @@
   --word-size-english: 4.55cqw;
 }
 
+.game-brand--floor {
+  --parcel-width: 18%;
+  --parcel-top: -23%;
+  --word-size: clamp(17px, 5.5vw, 25px);
+  --word-size-english: clamp(15px, 4.8vw, 22px);
+  position: relative;
+  width: clamp(112px, 33vw, 164px);
+  max-width: 100%;
+  aspect-ratio: 3.4;
+  margin-top: .2rem;
+  font-size: 1rem;
+}
+
 .game-brand img.game-brand-parcel {
   position: absolute;
   top: var(--parcel-top);

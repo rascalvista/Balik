@@ -13,8 +13,7 @@ const garageAudio = (() => {
   const buffers = new Map();
   const voices = new Map();
   let context;
-  let output;
-  let muted = false;
+  let mixer;
 
   function stop(name) {
     const voice = voices.get(name);
@@ -47,7 +46,7 @@ const garageAudio = (() => {
       source.buffer = buffer;
       source.loop = loop;
       source.connect(gain);
-      gain.connect(output);
+      gain.connect(mixer[loop ? 'music' : 'effects']);
       gain.gain.setValueAtTime(0, time);
       gain.gain.linearRampToValueAtTime(sound.level, time + (loop ? .45 : .015));
       voice.source = source;
@@ -69,9 +68,7 @@ const garageAudio = (() => {
   function activate() {
     if (!context) {
       context = new AudioContext();
-      output = context.createGain();
-      output.gain.value = muted ? 0 : 1;
-      output.connect(context.destination);
+      mixer = balikSound.createMixer(context);
     }
     if (context.state !== 'running') context.resume().catch(() => {});
     if (!voices.has('music')) play('music');
@@ -94,19 +91,12 @@ const garageAudio = (() => {
       if (!toggle.contains(document.elementFromPoint(touch.clientX, touch.clientY))) return;
       event.preventDefault();
       activate();
-      toggleMute();
+      balikSound.toggleMute();
     }, {passive: false});
   } else {
     toggle.disabled = true;
   }
 
-  function toggleMute() {
-    muted = !muted;
-    toggle.textContent = muted ? '🔇' : '🔈';
-    toggle.title = muted ? 'Zapnout zvuk' : 'Ztlumit zvuk';
-    toggle.setAttribute('aria-pressed', String(!muted));
-    if (output) output.gain.setTargetAtTime(muted ? 0 : 1, context.currentTime, .02);
-  }
-  toggle.addEventListener('click', toggleMute);
+  balikSound.bindSpeaker(toggle);
   return {play, stopEffects};
 })();

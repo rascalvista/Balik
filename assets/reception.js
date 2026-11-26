@@ -9,7 +9,6 @@ const modal = find('.modal');
 const reward = find('.reward');
 const lift = find('.elevator');
 const sound = find('.sound');
-const menu = find('.menu');
 const difficulty = find('#difficulty');
 
 const decks = {
@@ -22,28 +21,20 @@ let hard = false;
 let current;
 let phase;
 let retryTimer;
-let muted = false;
 let audioContext;
-
-try {
-  localStorage.setItem('balik.lastFloor', '0');
-  muted = localStorage.getItem('balik.sound') === 'off';
-} catch {}
-
-function syncSound() {
-  sound.style.background = muted ? '#0009' : 'transparent';
-  sound.setAttribute('aria-pressed', String(!muted));
-}
+let soundMixer;
 
 function beep(correct) {
-  if (muted) return;
   try {
-    audioContext ??= new (window.AudioContext || window.webkitAudioContext)();
-    audioContext.resume();
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      soundMixer = balikSound.createMixer(audioContext);
+    }
+    audioContext.resume().catch(() => {});
     const oscillator = audioContext.createOscillator();
     const gain = audioContext.createGain();
     oscillator.connect(gain);
-    gain.connect(audioContext.destination);
+    gain.connect(soundMixer.effects);
     oscillator.frequency.value = correct ? 660 : 180;
     const now = audioContext.currentTime;
     gain.gain.setValueAtTime(.08, now);
@@ -156,24 +147,5 @@ find('.back').addEventListener('click', () => {
   if (document.referrer && new URL(document.referrer).origin === location.origin) history.back();
   else location.href = '../';
 });
-sound.addEventListener('click', () => {
-  muted = !muted;
-  syncSound();
-  try { localStorage.setItem('balik.sound', muted ? 'off' : 'on'); } catch {}
-});
-
-if (reception.hasAttribute('data-test')) {
-  const brand = typeof gameName === 'string' ? gameName : 'BALÍČEK';
-  menu.addEventListener('click', () => show(brand + ' · testovací hádanky', [
-    ['Pokračovat', () => { modal.hidden = true; }],
-    ['Restartovat patro', () => next()],
-    ['B2 · Garáže', () => { location.href = '../b2/'; }],
-    ['B1 · Strojovna', () => { location.href = '../'; }],
-    ['Hlavní obrazovka', () => { location.href = '../home.html'; }]
-  ]));
-} else {
-  menu.hidden = true;
-}
-
-syncSound();
+balikSound.bindSpeaker(sound, {painted: true});
 next();
