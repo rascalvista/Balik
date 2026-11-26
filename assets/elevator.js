@@ -47,6 +47,10 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
   let arrivalTimer;
   let target;
 
+  function setAudioScene(scene) {
+    document.dispatchEvent(new CustomEvent('balik:elevator-audio', {detail: scene}));
+  }
+
   for (const label of elevatorFloors) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -86,6 +90,7 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
     closePanel.disabled = true;
     instruction.textContent = 'Výtah jede do ' + (destination === '0' ? 'přízemí.' : destination + '.');
     arrivalTimer = setTimeout(() => {
+      setAudioScene('departing');
       dialog.close();
       onTravel();
     }, reducedMotion.matches ? 0 : 1000);
@@ -112,6 +117,9 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
     onPress();
   });
   closePanel.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('close', () => {
+    if (!dialog.open && !traveling) setAudioScene('room');
+  });
   dialog.addEventListener('cancel', event => {
     if (traveling) event.preventDefault();
   });
@@ -124,6 +132,7 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
       if (dialog.open || traveling) return;
       setDoors(false);
       dialog.showModal();
+      setAudioScene('cabin');
       target.focus();
     },
     reset() {
@@ -131,6 +140,7 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
       traveling = false;
       installed = false;
       if (dialog.open) dialog.close();
+      setAudioScene('room');
       dialog.classList.remove('is-traveling');
       target.classList.remove('is-selected');
       target.disabled = false;

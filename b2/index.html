@@ -6,7 +6,7 @@
   <title>BALÍČEK | B2 – Garáže</title>
   <link rel="stylesheet" href="../assets/elevator.css?v=2">
   <link rel="stylesheet" href="../assets/game-name.css?v=2">
-  <link rel="stylesheet" href="../assets/balik-ui.css">
+  <link rel="stylesheet" href="../assets/balik-ui.css?v=2">
   <style>
     * { box-sizing: border-box; }
     body {
@@ -112,30 +112,16 @@
     .garage-courier {
       position: absolute;
       left: 10.6%;
-      top: 53.9%;
+      bottom: 26.5%;
       width: 8.6%;
-      aspect-ratio: 72/121;
-      background-position: 97.101% 33.333%;
-      background-size: 1537.5% 166.942%;
-      transform: scaleX(-1);
-      clip-path: polygon(
-        33.333% 1.653%, 63.889% 1.653%, 75% 7.438%, 79.167% 15.702%,
-        77.778% 25.620%, 73.611% 32.231%, 90.278% 33.058%, 94.444% 38.017%,
-        93.056% 46.281%, 94.444% 59.504%, 88.889% 65.289%, 73.611% 68.595%,
-        69.444% 76.860%, 72.222% 88.430%, 66.667% 93.388%, 50% 95.041%,
-        47.222% 95.868%, 37.5% 97.521%, 20.833% 96.694%, 20.833% 91.736%,
-        26.389% 87.603%, 25% 77.686%, 27.778% 69.421%, 15.278% 71.074%,
-        8.333% 66.942%, 9.722% 60.331%, 15.278% 54.545%, 18.056% 45.455%,
-        26.389% 41.322%, 25% 36.364%, 20.833% 32.231%, 20.833% 25.620%,
-        11.111% 25.620%, 6.944% 22.314%, 8.333% 18.182%, 22.222% 14.876%, 25% 7.438%
-      );
+      aspect-ratio: 150/292;
     }
     [hidden] { display: none; }
   </style>
-  <script src="../assets/elevator.js?v=2" defer></script>
-  <script src="../assets/balik-sound.js" defer></script>
-  <script src="audio.js?v=2" defer></script>
-  <script src="game.js?v=5" defer></script>
+  <script src="../assets/elevator.js?v=3" defer></script>
+  <script src="../assets/balik-sound.js?v=2" defer></script>
+  <script src="audio.js?v=3" defer></script>
+  <script src="game.js?v=6" defer></script>
   <script src="../assets/game-name.js" defer></script>
   <script src="../assets/balik-menu.js?v=5" defer></script>
 </head>
@@ -156,7 +142,7 @@
       <canvas id="parking" width="450" height="338" aria-label="Parkovací rébus">
         Odsuň auta z dráhy červeného vozu a vyjeď s ním doleva.
       </canvas>
-      <span class="courier garage-courier" role="img" aria-label="Kurýr"></span>
+      <span class="courier courier-standing garage-courier" role="img" aria-label="Kurýr"></span>
       <button class="trunk" id="trunk" type="button" aria-label="Otevřít kufr" hidden></button>
       <button class="floor-button floor-pickup" id="pickup" type="button" aria-label="Vyzvednout tlačítko B1" hidden>B1</button>
       <button class="elevator-entry" id="elevator-entry" type="button" aria-label="Nastoupit do výtahu" hidden></button>

@@ -23,12 +23,16 @@ let phase;
 let retryTimer;
 let audioContext;
 let soundMixer;
+const tones = new Set();
 
 function beep(correct) {
+  if (!balikSound.isPageActive()) return;
   try {
     if (!audioContext) {
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      soundMixer = balikSound.createMixer(audioContext);
+      soundMixer = balikSound.createMixer(audioContext, () => {
+        for (const tone of tones) tone.stop();
+      });
     }
     audioContext.resume().catch(() => {});
     const oscillator = audioContext.createOscillator();
@@ -39,7 +43,13 @@ function beep(correct) {
     const now = audioContext.currentTime;
     gain.gain.setValueAtTime(.08, now);
     gain.gain.exponentialRampToValueAtTime(.001, now + .25);
+    oscillator.onended = () => {
+      tones.delete(oscillator);
+      oscillator.disconnect();
+      gain.disconnect();
+    };
     oscillator.start();
+    tones.add(oscillator);
     oscillator.stop(now + .26);
   } catch {}
 }

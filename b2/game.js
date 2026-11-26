@@ -1,28 +1,45 @@
 'use strict';
 
-const vehicles = [
-  {x: 4, y: 2, length: 2, axis: 'h', image: 'car-00.png'},
-  {x: 4, y: 0, length: 2, axis: 'v', image: 'car-01.png'},
-  {x: 5, y: 3, length: 3, axis: 'v', image: 'car-02.png'},
-  {x: 0, y: 1, length: 2, axis: 'v', image: 'car-03.png'},
-  {x: 2, y: 2, length: 2, axis: 'v', image: 'car-04.png'},
-  {x: 1, y: 1, length: 2, axis: 'v', image: 'car-05.png'},
-  {x: 1, y: 3, length: 2, axis: 'v', image: 'car-06.png'},
-  {x: 2, y: 1, length: 2, axis: 'h', image: 'car-07.png'},
-  {x: 2, y: 4, length: 2, axis: 'v', image: 'car-04.png'},
-  {x: 3, y: 2, length: 2, axis: 'v', image: 'car-01.png'},
-  {x: 1, y: 0, length: 2, axis: 'h', image: 'car-10.png'},
-  {x: 3, y: 5, length: 2, axis: 'h', image: 'car-07.png'},
-  {x: 0, y: 4, length: 2, axis: 'v', image: 'car-06.png'},
-  {x: 5, y: 0, length: 2, axis: 'v', image: 'car-03.png'}
+const fleet = [
+  {length: 2, axis: 'h', image: 'car-00.png'},
+  {length: 2, axis: 'v', image: 'car-01.png'},
+  {length: 3, axis: 'v', image: 'car-02.png'},
+  {length: 2, axis: 'v', image: 'car-03.png'},
+  {length: 2, axis: 'v', image: 'car-04.png'},
+  {length: 2, axis: 'v', image: 'car-05.png'},
+  {length: 2, axis: 'v', image: 'car-06.png'},
+  {length: 2, axis: 'h', image: 'car-07.png'},
+  {length: 2, axis: 'v', image: 'car-04.png'},
+  {length: 2, axis: 'v', image: 'car-01.png'},
+  {length: 2, axis: 'h', image: 'car-10.png'},
+  {length: 2, axis: 'h', image: 'car-07.png'},
+  {length: 2, axis: 'v', image: 'car-06.png'},
+  {length: 2, axis: 'v', image: 'car-03.png'}
 ];
+// A is the red car. Each letter occupies the cells of one vehicle from the fleet.
+const parkingLayouts = [
+  ['.KK.BN', 'DFHHBN', 'DFEJAA', '.GEJ.C', 'MGI..C', 'M.ILLC'],
+  ['IGELLF', 'IGEM.F', '.C.MAA', 'DCBJN.', 'DCBJN.', 'HH..KK'],
+  ['EKKM.J', 'E.IM.J', 'CBIAAF', 'CBLLNF', 'C.D.NG', '..DHHG'],
+  ['.KK.E.', 'D...EF', 'DIJAAF', 'CIJGHH', 'CNMG.B', 'CNMLLB'],
+  ['J.LLFN', 'JGB.FN', '.GBEAA', 'CI.EKK', 'CID..M', 'C.DHHM'],
+  ['.NHHBI', 'FNGDBI', 'F.GDAA', 'ECMJKK', 'ECMJ..', '.C..LL'],
+  ['LL..F.', 'MIBNF.', 'MIBNAA', 'DGC..E', 'DGCJ.E', 'KKCJHH'],
+  ['FN.HHE', 'FNBLLE', 'C.BGAA', 'C..GI.', 'CJMDI.', '.JMDKK'],
+  ['.HH.FB', 'DI.CFB', 'DIMCAA', '.GMCKK', 'JGN..E', 'J.NLLE'],
+  ['GN.KKE', 'GNIM.E', '.CIMAA', 'DCJB..', 'DCJBF.', 'HHLLF.'],
+  ['..HHNI', 'DG.FNI', 'DGMFAA', 'CBM.KK', 'CBE..J', 'C.ELLJ'],
+  ['HHFDEG', 'JIFDEG', 'JI.BAA', 'MKKBCN', 'M...CN', '.LL.C.']
+];
+const vehicleLabels = 'ABCDEFGHIJKLMN';
+const parkingDeckKey = 'balik.parkingDeck.v1';
 const board = {x: 188, y: 76, cell: 36, size: 6};
 const targetCar = 0;
 const door = {x: 44, y: 93, width: 46, height: 50};
 const carInset = 3;
 const laneLeft = 109;
 const exitDistance = (board.x - laneLeft) / board.cell;
-const laneTop = board.y + vehicles[targetCar].y * board.cell;
+const laneTop = board.y + 2 * board.cell;
 const parkedMessage = 'Ve výtahu chybí všechna tlačítka. Portýr říkal, že správce má vždycky jedno rezervní v kufru auta. ' +
   'Jenže auta jsou tak těsně zaparkovaná, že kufr nejde otevřít. A já strašně spěchám! ' +
   'Odsuň ostatní auta a vyjeď červeným vozem doleva.';
@@ -61,6 +78,8 @@ placeControl(pickup, {
 });
 placeControl(elevatorEntry, door);
 
+const parkingDeck = restoreParkingDeck();
+let vehicles;
 let positions;
 let visual;
 let history;
@@ -84,7 +103,45 @@ function loadImage(filename) {
 }
 
 const background = loadImage('garage-background.png');
-const carImages = vehicles.map(vehicle => loadImage(vehicle.image));
+const carImages = fleet.map(vehicle => loadImage(vehicle.image));
+
+function restoreParkingDeck() {
+  const isLayout = index => Number.isInteger(index) && index >= 0 && index < parkingLayouts.length;
+  try {
+    const saved = JSON.parse(localStorage.getItem(parkingDeckKey));
+    if (isLayout(saved?.last) && Array.isArray(saved.remaining) &&
+        saved.remaining.every(index => isLayout(index) && index !== saved.last) &&
+        new Set(saved.remaining).size === saved.remaining.length) {
+      return saved;
+    }
+  } catch {}
+  return {remaining: [], last: null};
+}
+
+function drawParkingLayout() {
+  if (!parkingDeck.remaining.length) {
+    const shuffled = parkingLayouts.map((_, index) => index);
+    for (let index = shuffled.length - 1; index > 0; index--) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+    }
+    const top = shuffled.length - 1;
+    if (shuffled[top] === parkingDeck.last) {
+      const swapIndex = Math.floor(Math.random() * top);
+      [shuffled[top], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[top]];
+    }
+    parkingDeck.remaining = shuffled;
+  }
+
+  const index = parkingDeck.remaining.pop();
+  parkingDeck.last = index;
+  try { localStorage.setItem(parkingDeckKey, JSON.stringify(parkingDeck)); } catch {}
+  const diagram = parkingLayouts[index].join('');
+  return fleet.map((vehicle, index) => {
+    const cell = diagram.indexOf(vehicleLabels[index]);
+    return {...vehicle, x: cell % board.size, y: Math.floor(cell / board.size)};
+  });
+}
 
 function carRect(index, offset) {
   const vehicle = vehicles[index];
@@ -140,6 +197,7 @@ function endDrag() {
 function resetPuzzle() {
   garageAudio.stopEffects();
   endDrag();
+  vehicles = drawParkingLayout();
   positions = vehicles.map(vehicle => vehicle.axis === 'h' ? vehicle.x : vehicle.y);
   visual = positions.slice();
   history = [];
@@ -286,6 +344,8 @@ function drawParkingLines() {
     sample.width = width * 2;
     sample.height = height;
     const texture = sample.getContext('2d');
+    texture.fillStyle = '#253441';
+    texture.fillRect(0, 0, sample.width, sample.height);
     texture.drawImage(background, 117, 190, width, height, 0, 0, width, height);
     texture.translate(sample.width, 0);
     texture.scale(-1, 1);
@@ -294,7 +354,6 @@ function drawParkingLines() {
   }
 
   const side = board.cell * board.size;
-  const right = board.x + side;
   const bottom = board.y + side;
   context.fillStyle = floorTexture;
   context.fillRect(board.x, board.y, side, side);

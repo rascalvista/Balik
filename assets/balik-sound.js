@@ -21,6 +21,7 @@ const balikSound = (() => {
   }
 
   let settings = read();
+  let pageActive = true;
 
   function subscribe(listener) {
     listeners.add(listener);
@@ -43,6 +44,15 @@ const balikSound = (() => {
     }
   });
 
+  window.addEventListener('pagehide', () => { pageActive = false; });
+  window.addEventListener('pageshow', event => {
+    pageActive = true;
+    if (event.persisted) {
+      settings = read();
+      listeners.forEach(listener => listener(settings));
+    }
+  });
+
   function toggleMute() {
     update({muted: !settings.muted});
   }
@@ -57,16 +67,28 @@ const balikSound = (() => {
     button.addEventListener('click', toggleMute);
   }
 
-  function createMixer(context) {
+  function createMixer(context, stopSounds) {
     const mixer = {};
     for (const channel of Object.keys(channels)) {
       const gain = context.createGain();
       const level = state => state.muted ? 0 : state[channel] / 100;
       gain.gain.value = level(settings);
       gain.connect(context.destination);
-      subscribe(state => gain.gain.setTargetAtTime(level(state), context.currentTime, .025));
+      subscribe(state => {
+        if (pageActive) gain.gain.setTargetAtTime(level(state), context.currentTime, .025);
+      });
       mixer[channel] = gain;
     }
+    window.addEventListener('pagehide', () => {
+      // Silence the outputs immediately, even if Safari suspends asynchronously.
+      const now = context.currentTime;
+      for (const gain of Object.values(mixer)) {
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(0, now);
+      }
+      stopSounds?.();
+      if (context.state !== 'closed') context.suspend().catch(() => {});
+    });
     return mixer;
   }
 
@@ -101,5 +123,5 @@ const balikSound = (() => {
     subscribe(({muted}) => { input.checked = !muted; });
   }
 
-  return {bindSpeaker, createMixer, mountSettings, toggleMute};
+  return {bindSpeaker, createMixer, isPageActive: () => pageActive, mountSettings, toggleMute};
 })();

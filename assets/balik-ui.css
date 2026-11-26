@@ -59,24 +59,19 @@
 .floor-control[aria-pressed="false"] { border-color: #745641; }
 
 .courier {
-  background-image: url("courier-sheet.jpg");
   background-repeat: no-repeat;
+  background-size: 100% 100%;
   image-rendering: pixelated;
   pointer-events: none;
 }
 
+.courier-standing {
+  background-image: url("reception-courier-standing.png");
+}
+
 .courier-portrait {
-  aspect-ratio: 72/71;
-  background-size: 1537.500% 284.507%;
-  background-position: 5.217% 20.611%;
-  clip-path: polygon(
-    36.111% 4.225%, 61.111% 4.225%, 70.833% 11.268%, 75% 16.901%,
-    79.167% 30.986%, 80.556% 47.887%, 87.5% 50.704%, 87.5% 61.972%,
-    81.944% 69.014%, 90.278% 74.648%, 94.444% 85.915%, 100% 100%,
-    0% 100%, 2.778% 88.732%, 9.722% 74.648%, 19.444% 69.014%,
-    15.278% 63.38%, 15.278% 50.704%, 22.222% 47.887%, 20.833% 33.803%,
-    22.222% 19.718%, 26.389% 11.268%
-  );
+  aspect-ratio: 1;
+  background-image: url("reception-courier-portrait.png");
 }
 
 #balik-menu {
