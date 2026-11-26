@@ -421,10 +421,10 @@ let phase = 'idle';
 let epoch = 0;
 
 const soundLevels = {
-  fluorescent: .014, 'curious-theme': .19, drop: .23, click: .28, valve: .32,
+  'curious-theme': .19, drop: .23, click: .28, valve: .32,
   steam: .36, motor: .35, explosion: .8, glass: .65, ding: .29, music: .32
 };
-const roomTracks = ['fluorescent', 'curious-theme'];
+const roomTrack = 'curious-theme';
 const soundBytes = new Map(Object.keys(soundLevels).map(name => [
   name, fetch('audio/' + name + '.mp3')
     .then(response => response.ok ? response.arrayBuffer() : null)
@@ -483,7 +483,7 @@ function playSound(name, {loop = false, pan = 0, delay = 0, accelerateOver = 0} 
     };
 
     const start = soundContext.currentTime + delay;
-    if (roomTracks.includes(name)) {
+    if (name === roomTrack) {
       gain.gain.setValueAtTime(0, start);
       gain.gain.linearRampToValueAtTime(soundLevels[name], start + .5);
     }
@@ -495,10 +495,8 @@ function playSound(name, {loop = false, pan = 0, delay = 0, accelerateOver = 0} 
   });
 }
 
-function playRoomTracks() {
-  for (const name of roomTracks) {
-    if (!playingSounds.has(name)) playSound(name, {loop: true});
-  }
+function playRoomTrack() {
+  if (!playingSounds.has(roomTrack)) playSound(roomTrack, {loop: true});
 }
 
 if (SoundContext) {
@@ -508,7 +506,7 @@ if (SoundContext) {
       soundOutput = soundContext.createGain();
       soundOutput.gain.value = muted ? 0 : 1;
       soundOutput.connect(soundContext.destination);
-      playRoomTracks();
+      playRoomTrack();
     }
     if (soundContext.state !== 'running') soundContext.resume().catch(() => {});
   }, true);
@@ -702,7 +700,7 @@ function buildPressure(currentRun) {
   function burst() {
     if (currentRun !== epoch) return;
     serviceCase.className = 'hot case burst';
-    roomTracks.forEach(stopSound);
+    stopSound(roomTrack);
     stopSound('motor');
     playSound('explosion', {pan: .22});
     stage.classList.remove('pressure-shake');
@@ -733,9 +731,9 @@ function buildPressure(currentRun) {
 function reset() {
   epoch++;
   for (const name of playingSounds.keys()) {
-    if (!roomTracks.includes(name)) stopSound(name);
+    if (name !== roomTrack) stopSound(name);
   }
-  playRoomTracks();
+  playRoomTrack();
   phase = 'idle';
   a = generateBoard();
   valve.disabled = false;
