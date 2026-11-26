@@ -56,79 +56,239 @@
 }
 
 .elevator-panel {
-  width: min(21rem, calc(100vw - 2rem));
-  max-height: calc(100dvh - 2rem);
-  padding: 1rem 1.15rem 1.2rem;
-  border: 2px solid #91774f;
-  border-radius: .7rem;
-  background: linear-gradient(148deg, #35404a, #252b32 62%, #1c2026);
-  color: #f1debb;
-  box-shadow: inset 0 0 0 2px #1b1e24, 0 1rem 3rem #080910ad;
-  font: 15px/1.45 monospace;
+  --button-size: clamp(2.75rem, 7dvh, 3.15rem);
+  --row-gap: clamp(.22rem, 1.05dvh, .57rem);
+  box-sizing: border-box;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(22.5rem, calc(100vw - 1.5rem));
+  max-width: none;
+  max-height: calc(100dvh - 1.5rem);
+  overflow: auto;
+  padding: 0;
+  border: 1px solid #805536;
+  border-radius: .4rem;
+  background: #27140c;
+  color: #f8e4c1;
+  box-shadow: 0 1.1rem 4rem #090504e8, 0 0 0 1px #190c07;
+  font: 15px/1.35 Georgia, serif;
 }
 
-.elevator-panel::backdrop { background: #0b1018c9; }
+.elevator-panel::backdrop { background: #0d0908d6; }
 
-.elevator-panel h2 {
-  margin: 0;
-  color: #f4d4a2;
-  font: bold 1.2rem/1.35 monospace;
+.elevator-cabin {
+  position: relative;
+  padding-left: 23%;
 }
 
-.elevator-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: .75rem;
+.elevator-gate {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 23%;
+  overflow: hidden;
+  background: linear-gradient(90deg, #110d0a 0%, #2e2920 48%, #100d09);
+}
+
+.elevator-gate::before {
+  content: "";
+  position: absolute;
+  inset: -40px 0;
+  background: repeating-linear-gradient(0deg, #120f0c 0 5px, #71674f 6px, #30291e 7px, #191611 9px);
+  opacity: .68;
+}
+
+.elevator-grille {
+  position: absolute;
+  inset: 0 8% 0 0;
+  border-inline: 5px solid #6e6047;
+  background:
+    linear-gradient(90deg, #14100abc, transparent 17% 78%, #100e0b9c),
+    repeating-linear-gradient(64deg, transparent 0 49px, #372d1e 49px, #a39872 51px, #60553e 54px, transparent 56px 92px),
+    repeating-linear-gradient(-64deg, transparent 0 49px, #473c2b 49px, #8e815d 51px, #514630 54px, transparent 56px 92px);
+  box-shadow: inset 0 0 0 1px #b09a70, 4px 0 7px #070503;
+  transform: translateX(-29%);
+  transition: transform .32s ease-in-out;
+}
+
+.elevator-panel.doors-closed .elevator-grille { transform: translateX(0); }
+
+.elevator-panel.is-traveling .elevator-gate::before { animation: elevator-shaft .8s linear both; }
+
+@keyframes elevator-shaft {
+  from { transform: translateY(-35px); }
+  to { transform: translateY(35px); }
+}
+
+.elevator-wall {
+  position: relative;
+  padding: .95rem .85rem .6rem;
+  border-left: 5px ridge #86644b;
+  /* Dark Wood by Poly Haven (CC0), https://polyhaven.com/a/dark_wood */
+  background: linear-gradient(90deg, #170a05e3, #813b1352 8%, #190b057a 13%, transparent 41%, #240d077b 94%, #180a05d1),
+    linear-gradient(0deg, #170b07db, transparent 58%), url("elevator-wood.webp") center / cover, #462516;
+  box-shadow: inset -4px 0 0 #200d07a8, inset 0 1px 3px #ffd39c63;
 }
 
 .elevator-close {
-  width: 38px;
-  height: 38px;
+  display: grid;
+  place-items: center;
+  position: absolute;
+  z-index: 1;
+  top: .45rem;
+  right: .45rem;
+  width: 30px;
+  height: 30px;
   min-height: 0;
   padding: 0;
-  border: 1px solid #827053;
-  border-radius: .35rem;
-  background: #24292e;
-  color: #f1debb;
-  font: 1.45rem/1 system-ui, sans-serif;
+  border: 1px solid #b08359;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 28%, #6b4a31, #332015 74%);
+  color: #f4ddad;
+  box-shadow: 0 2px 4px #180c07;
+  font: 20px/1 Georgia, serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.elevator-close::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.elevator-plate {
+  box-sizing: border-box;
+  width: min(100%, 11.3rem);
+  margin: 0 auto;
+  padding: .8rem .65rem 1.32rem;
+  border: 1px solid #9d6b3e;
+  border-radius: .4rem .4rem 2.55rem 2.55rem;
+  background:
+    radial-gradient(ellipse at 30% 6%, #f9b06f57, transparent 52%),
+    linear-gradient(110deg, #24110bb5 3%, transparent 37%, #1b0e095c 77%, #160a07b0),
+    linear-gradient(0deg, #120b09f2, #341a10af 53%, #793d2380),
+    url("elevator-wood.webp") 76% center / auto 100%, #592c17;
+  box-shadow: inset 1px 1px 2px #edb9805e, inset -1px -1px 4px #1b0d09,
+    0 0 0 4px #28120b, 0 0 0 5px #7c462b, 0 7px 12px #170906b5;
 }
 
 .elevator-display {
-  margin-top: .8rem;
-  padding: .35rem .7rem;
-  border: 2px inset #79664a;
-  border-radius: .35rem;
-  background: #141210;
-  color: #ffbc56;
-  font: bold 1.45rem/1.45 monospace;
-  letter-spacing: .09em;
-  text-align: center;
-  text-shadow: 0 0 .38rem #d08431a8;
-}
-
-.elevator-buttons {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  place-items: center;
+  width: 2.65rem;
+  height: 2.65rem;
+  margin: 0 auto .48rem;
+  border: 3px ridge #b68d5b;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 34%, #483222, #1b110c 78%);
+  color: #ffdeaa;
+  box-shadow: 0 2px 5px #160a06bc, inset 0 0 4px #110a07;
+  font: bold 1.22rem/1 Georgia, serif;
+  text-shadow: 0 0 6px #e6a0479c;
+}
+
+.elevator-buttons,
+.elevator-door-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   justify-items: center;
-  gap: .5rem;
-  margin-top: 1rem;
-  padding: .85rem .35rem;
-  border: 1px solid #736550;
-  border-radius: .45rem;
-  background: #232830;
+  gap: var(--row-gap) .65rem;
 }
 
-.elevator-buttons .floor-button:disabled { opacity: .6; }
+.elevator-door-controls { margin-bottom: .6rem; }
 
-.floor-button.empty-slot {
-  border: 2px dashed #bfaa81;
-  background: #161b22;
-  color: #e9d3a9;
-  box-shadow: inset 0 2px 6px #0c1015;
+.elevator-plate .floor-button {
+  box-sizing: border-box;
+  position: relative;
+  width: var(--button-size);
+  height: var(--button-size);
+  border: 2px solid transparent;
+  background:
+    radial-gradient(ellipse at 30% 15%, #ffecc2a3, transparent 50%) padding-box,
+    linear-gradient(154deg, #d0ae78, #ad8050 76%, #c49b62) padding-box,
+    linear-gradient(145deg, #f6d7a2, #b08658 38%, #462a19 73%, #784e2e) border-box;
+  color: #2e1b0e;
+  box-shadow: inset 0 -2px 3px #59311391, inset 0 1px 2px #ffecca91, 0 3px 5px #100704e0;
+  font: bold 1.2rem/1 Georgia, serif;
+  text-shadow: 0 1px #f3d29b90;
 }
+
+.elevator-plate .floor-button:disabled { opacity: 1; }
+
+.elevator-plate .empty-slot {
+  background:
+    radial-gradient(ellipse at 48% 65%, #422a1d, #20140e 72%, #130b07) padding-box,
+    linear-gradient(150deg, #39231a, #704c30 46%, #a4784c 85%, #543621) border-box;
+  color: #d1ae83;
+  box-shadow: inset 0 3px 5px #0e0705, 0 1px 1px #b27d533d;
+  font-size: 1.05rem;
+  text-shadow: 0 1px #080503;
+}
+
+.elevator-plate .empty-slot:not(:disabled) {
+  border-color: #b58252;
+  color: #ffdb99;
+  box-shadow: inset 0 3px 5px #0e0705, 0 0 10px #e6a75955;
+}
+
+.elevator-plate .is-selected {
+  background:
+    radial-gradient(circle at 44% 35%, #fffefa, #fff0c4 72%, #f2c685) padding-box,
+    linear-gradient(#fff7dc, #c88e57) border-box;
+  color: #47250e;
+  box-shadow: 0 0 7px #ffe4a7, 0 0 21px #ff974ba8, 0 3px 4px #160905e0;
+  text-shadow: none;
+}
+
+.elevator-door-controls .floor-button { --button-size: 2.42rem; }
+
+.elevator-door-controls .floor-button::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+}
+
+.elevator-door-controls .floor-button:disabled { filter: brightness(.75); }
+
+.door-chevrons {
+  position: relative;
+  width: 18px;
+  height: 12px;
+  background: linear-gradient(#472b16, #472b16) center / 1px 100% no-repeat;
+}
+
+.door-chevrons::before,
+.door-chevrons::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  width: 6px;
+  height: 6px;
+  border: solid #402511;
+  border-width: 0 0 2px 2px;
+  transform: rotate(45deg);
+}
+
+.door-chevrons::before { left: 0; }
+.door-chevrons::after { right: 0; transform: rotate(225deg); }
+.elevator-door-shut .door-chevrons::before { transform: rotate(225deg); }
+.elevator-door-shut .door-chevrons::after { transform: rotate(45deg); }
 
 .elevator-instruction {
-  min-height: 2.9em;
-  margin: .85rem 0 0;
+  min-height: 2.7em;
+  margin: .85rem .1rem 0;
+  color: #f8e4c1;
+  text-align: center;
+  text-shadow: 0 1px 2px #180b07;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .elevator-grille { transition: none; }
+  .elevator-panel.is-traveling .elevator-gate::before { animation: none; }
+}
+
+@media (max-height: 560px) {
+  .elevator-wall { padding-top: .65rem; }
+  .elevator-plate { padding-block: .44rem .75rem; }
+  .elevator-instruction { min-height: 1.35em; margin-top: .65rem; }
 }

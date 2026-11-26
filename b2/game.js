@@ -41,7 +41,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const panel = createElevatorPanel({
   floor: 'B2',
   destination: 'B1',
-  onInstall: () => garageAudio.play('click'),
+  onPress: () => garageAudio.play('click'),
   onTravel: () => window.location.assign('../')
 });
 
