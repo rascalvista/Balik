@@ -6,10 +6,12 @@ Všechny použité nahrávky mají licenci [CC0 1.0](https://creativecommons.org
 | --- | --- |
 | `click.mp3` | Kenney, [Interface Sounds](https://kenney.nl/assets/interface-sounds), `click_003` |
 | `valve.mp3` | Kenney, [Impact Sounds](https://kenney.nl/assets/impact-sounds), `impactMetal_medium_002` |
-| `burst.mp3` | Kenney, [Impact Sounds](https://kenney.nl/assets/impact-sounds), `impactPlate_heavy_002` a `impactGlass_light_001` |
-| `hum.mp3` | Developer_Jake, [Fluorescent lightbulb hum buzz (Extended)](https://freesound.org/people/Developer_Jake/sounds/638895/) |
+| `explosion.mp3` | Qvantor, [Synthesized Explosion](https://freesound.org/people/Qvantor/sounds/879282/) |
+| `glass.mp3` | egomassive, [Glass.ogg](https://freesound.org/people/egomassive/sounds/536763/), z nahrávky „G26-07 Windows Breaking“ od Craiga Smithe |
+| `fluorescent.mp3` | Developer_Jake, [Fluorescent lightbulb hum buzz (Extended)](https://freesound.org/people/Developer_Jake/sounds/638895/) |
 | `drop.mp3` | bolkmar, [Water drop (splash)](https://freesound.org/people/bolkmar/sounds/451126/) |
 | `steam.mp3` | craigsmith, [S23-08 Steam or air hissing.wav](https://freesound.org/people/craigsmith/sounds/675575/) |
 | `motor.mp3` | soundjoao, [Motor Loop 2.wav](https://freesound.org/people/soundjoao/sounds/325810/) |
 | `ding.mp3` | XfiXy8, [Elevator Ding.wav](https://freesound.org/people/XfiXy8/sounds/467299/) |
 | `music.mp3` | congusbongus, [Two Left Socks](https://opengameart.org/content/two-left-socks) |
+| `basement.mp3` | yd, [Insistent: background loop](https://opengameart.org/content/insistent-background-loop) |
