@@ -1,0 +1,77 @@
+.difficulty {
+  position: absolute;
+  left: 63.5%;
+  bottom: 2.6%;
+  width: 32%;
+  min-height: 32px;
+  height: 6.6%;
+  padding: 2px 4px;
+  border: 2px solid #c79558;
+  border-radius: .45em;
+  background: linear-gradient(#4b3125, #2b211d);
+  color: #ffe0a6;
+  font-size: max(.72rem, 2.8cqw);
+  font-weight: 750;
+  line-height: 1.15;
+  text-shadow: 0 1px #291a13;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.difficulty::before {
+  position: absolute;
+  content: "";
+  inset-block: -6px;
+  inset-inline: 0;
+}
+
+.difficulty[aria-pressed="true"] {
+  border-color: #ffdda1;
+  background: linear-gradient(#efba70, #cd9050);
+  color: #2b1d16;
+  box-shadow: inset 0 1px 4px #6a442e93;
+  text-shadow: none;
+}
+
+.is-hard .clue {
+  top: auto;
+  bottom: 40.8%;
+  width: 24%;
+  height: auto;
+  min-height: 17%;
+  display: flex;
+  align-items: center;
+  padding: .95%;
+  border: 1px solid #875c37;
+  border-radius: .25em;
+  box-shadow: 0 2px 4px #21170d91;
+  font-size: max(.68rem, 2.7cqw);
+  font-weight: 660;
+  line-height: 1.14;
+  text-align: left;
+}
+
+.is-hard .c0 { left: 21.5%; }
+.is-hard .c1 { left: 46.5%; }
+.is-hard .c2 { left: 71.5%; }
+
+.clue ol {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style-position: inside;
+}
+
+.clue li {
+  overflow-wrap: anywhere;
+}
+
+.clue li::marker { color: #725032; }
+
+.clue li + li {
+  margin-top: .35em;
+  padding-top: .35em;
+  border-top: 1px solid #9b623b69;
+}
+
+.is-hard .dialog { font-size: max(10px, 2.55cqw); }
