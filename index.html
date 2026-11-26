@@ -426,9 +426,7 @@ const elevator = createElevatorPanel({
     if (phase !== 'elevator') return;
     phase = 'finished';
     elevatorEntry.hidden = true;
-    $('dialog').textContent = '„Tak. Otevřeno. Technicky vzato.“';
-    $('done').hidden = false;
-    $('again').focus({preventScroll: true});
+    location.href = 'recepce-test/';
   }
 });
 const map = new Map(cells.map((cell, index) => [cell.join(','), index]));
