@@ -71,17 +71,11 @@ function drawPuzzle(deck) {
 
 function renderClues() {
   current[0].forEach((statements, index) => {
-    if (!hard) {
-      clues[index].textContent = statements;
-      return;
-    }
-    const list = document.createElement('ol');
-    for (const statement of statements) {
-      const item = document.createElement('li');
-      item.textContent = statement;
-      list.append(item);
-    }
-    clues[index].replaceChildren(list);
+    const [upper, lower] = clues[index].children;
+    upper.firstElementChild.hidden = !hard;
+    upper.lastElementChild.textContent = hard ? statements[0] : statements;
+    lower.lastElementChild.textContent = hard ? statements[1] : '';
+    lower.hidden = !hard;
   });
 }
 
@@ -143,7 +137,7 @@ function show(text, actions) {
 difficulty.addEventListener('click', () => {
   hard = !hard;
   reception.classList.toggle('is-hard', hard);
-  difficulty.setAttribute('aria-pressed', String(hard));
+  difficulty.textContent = hard ? 'Lehčí otázky' : 'Těžší hádanky';
   next();
 });
 

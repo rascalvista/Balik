@@ -1,3 +1,5 @@
+main { width: min(100vw, max(320px, 75dvh)); }
+
 .difficulty {
   position: absolute;
   left: 63.5%;
@@ -24,7 +26,7 @@
   inset-inline: 0;
 }
 
-.difficulty[aria-pressed="true"] {
+.is-hard .difficulty {
   border-color: #ffdda1;
   background: linear-gradient(#efba70, #cd9050);
   color: #2b1d16;
@@ -32,46 +34,59 @@
   text-shadow: none;
 }
 
-.is-hard .clue {
-  top: auto;
-  bottom: 40.8%;
-  width: 24%;
-  height: auto;
-  min-height: 17%;
-  display: flex;
-  align-items: center;
-  padding: .95%;
-  border: 1px solid #875c37;
-  border-radius: .25em;
-  box-shadow: 0 2px 4px #21170d91;
-  font-size: max(.68rem, 2.7cqw);
-  font-weight: 660;
-  line-height: 1.14;
-  text-align: left;
+.clue {
+  position: absolute;
+  inset-block: 0;
+  width: 24.4%;
+  pointer-events: none;
 }
 
-.is-hard .c0 { left: 21.5%; }
-.is-hard .c1 { left: 46.5%; }
-.is-hard .c2 { left: 71.5%; }
+.c0 { left: 21.3%; }
+.c1 { left: 46.3%; }
+.c2 { left: 71.3%; }
 
-.clue ol {
-  width: 100%;
-  min-width: 0;
+.clue-face {
+  position: absolute;
+  inset-inline: 0;
+  top: 48%;
+  height: 13.05%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
   margin: 0;
-  padding: 0;
-  list-style-position: inside;
-}
-
-.clue li {
+  padding: .12em .32em;
+  border: 1px solid #7c4e29;
+  border-radius: .48em;
+  background: linear-gradient(145deg, #ffe0aa, #ffcb90 64%, #ecac73);
+  color: #2b1b14;
+  box-shadow: 0 0 0 1px #e0a668, 0 2px 4px #21140dc4, inset 0 0 0 1px #fff1cc, inset 0 0 0 2px #ba8151;
+  font-size: max(.68rem, 2.7cqw);
+  font-weight: 700;
+  line-height: 1.08;
+  text-align: center;
   overflow-wrap: anywhere;
 }
 
-.clue li::marker { color: #725032; }
-
-.clue li + li {
-  margin-top: .35em;
-  padding-top: .35em;
-  border-top: 1px solid #9b623b69;
+.clue-lower {
+  top: 77.2%;
+  height: 12.8%;
+  background: linear-gradient(145deg, #ffdb9f, #f6bd86 64%, #e9a66e);
 }
 
+.clue-number {
+  position: absolute;
+  top: -.63em;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 1.5em;
+  padding: .06em .25em;
+  border: 1px solid #e9b876;
+  border-radius: .35em;
+  background: #51321f;
+  color: #ffe3b5;
+  font-size: .85em;
+  line-height: 1.02;
+}
+
+.is-hard .clue-face { font-weight: 660; }
 .is-hard .dialog { font-size: max(10px, 2.55cqw); }
