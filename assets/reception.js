@@ -163,7 +163,8 @@ sound.addEventListener('click', () => {
 });
 
 if (reception.hasAttribute('data-test')) {
-  menu.addEventListener('click', () => show('BALÍK · testovací hádanky', [
+  const brand = typeof gameName === 'string' ? gameName : 'BALÍČEK';
+  menu.addEventListener('click', () => show(brand + ' · testovací hádanky', [
     ['Pokračovat', () => { modal.hidden = true; }],
     ['Restartovat patro', () => next()],
     ['B2 · Garáže', () => { location.href = '../b2/'; }],

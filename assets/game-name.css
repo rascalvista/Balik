@@ -1,0 +1,84 @@
+.game-brand-stage { container-type: inline-size; }
+
+.game-brand {
+  --plate-shape: polygon(6.2% 0, 93.8% 0, 100% 18%, 100% 82%, 93.8% 100%, 6.2% 100%, 0 82%, 0 18%);
+  position: absolute;
+  left: var(--plate-left);
+  top: var(--plate-top);
+  width: var(--plate-width);
+  height: var(--plate-height);
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.game-brand::before,
+.game-brand::after {
+  content: "";
+  position: absolute;
+  clip-path: var(--plate-shape);
+}
+
+.game-brand::before {
+  z-index: -2;
+  inset: 0;
+  background: linear-gradient(#fff0bd, #bd7a32 18%, #e49d36 55%, #74481f 90%, #21130e);
+}
+
+.game-brand::after {
+  z-index: -1;
+  inset: 5% 1.5%;
+  background:
+    linear-gradient(#ffefb031, transparent 40%, #2d19094e),
+    repeating-linear-gradient(135deg, #2c251f 0 12%, #db8b23 12% 19%);
+  box-shadow: inset 0 0 0 .12em #22160f9c;
+}
+
+.game-brand--home {
+  --plate-left: 21.65%;
+  --plate-top: 4.74%;
+  --plate-width: 56.7%;
+  --plate-height: 14.22%;
+  --parcel-width: 19.5%;
+  --parcel-top: -25%;
+  --word-size: 9.35cqw;
+  --word-size-english: 7.55cqw;
+}
+
+.game-brand--reception {
+  --plate-left: 33%;
+  --plate-top: 1.25%;
+  --plate-width: 34%;
+  --plate-height: 7.1%;
+  --parcel-width: 17.4%;
+  --parcel-left: 61.2%;
+  --parcel-top: -19%;
+  --word-size: 5.45cqw;
+  --word-size-english: 4.55cqw;
+}
+
+.game-brand img.game-brand-parcel {
+  position: absolute;
+  top: var(--parcel-top);
+  left: var(--parcel-left, 50%);
+  transform: translateX(-50%);
+  width: var(--parcel-width);
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.game-brand-name {
+  position: relative;
+  transform: translateY(.17em);
+  color: #ffe5ad;
+  font: 950 var(--word-size)/1 "Arial Black", "DejaVu Sans", system-ui, sans-serif;
+  letter-spacing: -.045em;
+  -webkit-text-stroke: .085em #211409;
+  paint-order: stroke fill;
+  text-shadow: .02em .075em #aa652c, .025em .12em #20130e;
+  white-space: nowrap;
+}
+
+html:lang(en) .game-brand-name { font-size: var(--word-size-english); }
+html:lang(en) .patch.title[data-game-name] { font-size: 4.15cqw; letter-spacing: .02em; }

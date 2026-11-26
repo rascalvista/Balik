@@ -1,5 +1,6 @@
 (()=>{'use strict';
 function init(){
+const brand = typeof gameName === 'string' ? gameName : 'BALÍČEK';
 const root=new URL('../',document.currentScript?.src||location.href); 
 const script=document.querySelector('script[src*="balik-menu.js"]');
 const base=script?new URL('../',script.src):new URL('https://rascalvista.github.io/Balik/');
@@ -15,8 +16,8 @@ const style=document.createElement('style');style.textContent=`
 #balik-menu small{display:block;color:#bfae95;margin:14px 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
 #balik-menu [aria-current=page]{border-color:#ffcf74;background:#594126}
 `;document.head.append(style);
-const d=document.createElement('dialog');d.id='balik-menu';d.setAttribute('aria-label','Menu hry BALÍK');
-d.innerHTML='<h2>BALÍK</h2><button data-act="continue">Pokračovat ve hře</button><button data-act="reset">Restartovat patro</button><button data-act="sound">Zvuk</button><small>Testovací režim · patra bez zámků</small><div data-floors></div><small>Hlavní obrazovka</small><a data-home>Hlavní obrazovka</a>';
+const d=document.createElement('dialog');d.id='balik-menu';d.setAttribute('aria-label','Menu hry '+brand);
+d.innerHTML='<h2>'+brand+'</h2><button data-act="continue">Pokračovat ve hře</button><button data-act="reset">Restartovat patro</button><button data-act="sound">Zvuk</button><small>Testovací režim · patra bez zámků</small><div data-floors></div><small>Hlavní obrazovka</small><a data-home>Hlavní obrazovka</a>';
 d.querySelector('[data-home]').href=new URL('home.html',base);
 for(const [id,name,path] of floors){const url=new URL(path,base);const current=url.pathname.replace(/\/$/,'')===here;const el=document.createElement('a');el.textContent=id+' · '+name;el.href=url.href;if(current){el.setAttribute('aria-current','page');try{localStorage.setItem('balik.lastFloor',id)}catch{}}d.querySelector('[data-floors]').append(el)}
 document.body.append(d);
