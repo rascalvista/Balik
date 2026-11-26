@@ -14,3 +14,4 @@ Všechny použité nahrávky mají licenci [CC0 1.0](https://creativecommons.org
 | `ding.mp3` | XfiXy8, [Elevator Ding.wav](https://freesound.org/people/XfiXy8/sounds/467299/) |
 | `music.mp3` | congusbongus, [Two Left Socks](https://opengameart.org/content/two-left-socks) |
 | `curious-theme.mp3` | emanresU, [8-Bit Curious Theme](https://opengameart.org/content/8-bit-curious-theme) |
+| `b2/assets/garage.mp3` | LordZintick, [The Arplands](https://opengameart.org/content/the-arplands) |

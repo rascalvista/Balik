@@ -17,8 +17,15 @@
       margin: 0 auto;
       padding: 12px;
     }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
     h1 {
-      margin: 0 0 8px;
+      margin: 0;
       color: #e4bd60;
       font-size: clamp(21px, 4.8vw, 28px);
     }
@@ -74,10 +81,6 @@
     }
     .trunk {
       position: absolute;
-      left: 30.7%;
-      top: 43.8%;
-      width: 7.8%;
-      height: 8.8%;
       min-height: 0;
       padding: 0;
       border: 2px solid #f2c65c;
@@ -90,17 +93,62 @@
       content: "";
       inset: -7px;
     }
+    .sound-toggle {
+      position: relative;
+      display: grid;
+      place-items: center;
+      flex: 0 0 32px;
+      width: 32px;
+      height: 32px;
+      min-height: 0;
+      padding: 0;
+      border-radius: 7px;
+      font: 16px/1 system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    }
+    .sound-toggle::before {
+      content: "";
+      position: absolute;
+      inset: -6px;
+    }
+    .sound-toggle[aria-pressed="false"] { border-color: #515f6b; }
+    .courier {
+      position: absolute;
+      left: 10.6%;
+      top: 53.9%;
+      width: 8.6%;
+      aspect-ratio: 72/121;
+      background: url("../assets/courier-sheet.jpg") no-repeat 97.101% 33.333% / 1537.5% 166.942%;
+      image-rendering: pixelated;
+      transform: scaleX(-1);
+      clip-path: polygon(
+        33.333% 1.653%, 63.889% 1.653%, 75% 7.438%, 79.167% 15.702%,
+        77.778% 25.620%, 73.611% 32.231%, 90.278% 33.058%, 94.444% 38.017%,
+        93.056% 46.281%, 94.444% 59.504%, 88.889% 65.289%, 73.611% 68.595%,
+        69.444% 76.860%, 72.222% 88.430%, 66.667% 93.388%, 50% 95.041%,
+        47.222% 95.868%, 37.5% 97.521%, 20.833% 96.694%, 20.833% 91.736%,
+        26.389% 87.603%, 25% 77.686%, 27.778% 69.421%, 15.278% 71.074%,
+        8.333% 66.942%, 9.722% 60.331%, 15.278% 54.545%, 18.056% 45.455%,
+        26.389% 41.322%, 25% 36.364%, 20.833% 32.231%, 20.833% 25.620%,
+        11.111% 25.620%, 6.944% 22.314%, 8.333% 18.182%, 22.222% 14.876%, 25% 7.438%
+      );
+      pointer-events: none;
+    }
     [hidden] { display: none; }
   </style>
-  <script src="game.js" defer></script>
+  <script src="audio.js" defer></script>
+  <script src="game.js?v=2" defer></script>
 </head>
 <body>
   <main>
-    <h1>Spěchá! / B2</h1>
+    <header>
+      <h1>Spěchá! / B2</h1>
+      <button class="sound-toggle" id="sound-toggle" type="button" aria-label="Zvuk" aria-pressed="true" title="Ztlumit zvuk">🔈</button>
+    </header>
     <div class="parking">
       <canvas id="parking" width="450" height="338" aria-label="Parkovací rébus">
         Odsuň auta z dráhy červeného vozu a vyjeď s ním doleva.
       </canvas>
+      <span class="courier" role="img" aria-label="Kurýr"></span>
       <button class="trunk" id="trunk" type="button" aria-label="Otevřít kufr" hidden></button>
     </div>
     <p class="message" id="message" role="status"></p>

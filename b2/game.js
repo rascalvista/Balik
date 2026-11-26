@@ -2,19 +2,26 @@
 
 const vehicles = [
   {x: 4, y: 2, length: 2, axis: 'h', image: 'car-00.png'},
-  {x: 4, y: 4, length: 2, axis: 'v', image: 'car-01.png'},
+  {x: 4, y: 0, length: 2, axis: 'v', image: 'car-01.png'},
   {x: 5, y: 3, length: 3, axis: 'v', image: 'car-02.png'},
-  {x: 0, y: 2, length: 2, axis: 'v', image: 'car-03.png'},
-  {x: 2, y: 0, length: 2, axis: 'v', image: 'car-04.png'},
-  {x: 1, y: 2, length: 2, axis: 'v', image: 'car-05.png'},
-  {x: 1, y: 4, length: 2, axis: 'v', image: 'car-06.png'},
-  {x: 0, y: 1, length: 2, axis: 'h', image: 'car-07.png'},
+  {x: 0, y: 1, length: 2, axis: 'v', image: 'car-03.png'},
   {x: 2, y: 2, length: 2, axis: 'v', image: 'car-04.png'},
+  {x: 1, y: 1, length: 2, axis: 'v', image: 'car-05.png'},
+  {x: 1, y: 3, length: 2, axis: 'v', image: 'car-06.png'},
+  {x: 2, y: 1, length: 2, axis: 'h', image: 'car-07.png'},
+  {x: 2, y: 4, length: 2, axis: 'v', image: 'car-04.png'},
   {x: 3, y: 2, length: 2, axis: 'v', image: 'car-01.png'},
-  {x: 0, y: 0, length: 2, axis: 'h', image: 'car-10.png'}
+  {x: 1, y: 0, length: 2, axis: 'h', image: 'car-10.png'},
+  {x: 3, y: 5, length: 2, axis: 'h', image: 'car-07.png'},
+  {x: 0, y: 4, length: 2, axis: 'v', image: 'car-06.png'},
+  {x: 5, y: 0, length: 2, axis: 'v', image: 'car-03.png'}
 ];
-const board = {x: 214, y: 88, cell: 30, size: 6};
+const board = {x: 156, y: 64, cell: 40, size: 6};
 const targetCar = 0;
+const carInset = 3;
+const exitDistance = 2;
+const laneLeft = board.x - exitDistance * board.cell;
+const laneTop = board.y + vehicles[targetCar].y * board.cell;
 const parkedMessage = 'Ve výtahu chybí všechna tlačítka. Portýr říkal, že správce má vždycky jedno rezervní v kufru auta. ' +
   'Jenže auta jsou tak těsně zaparkovaná, že kufr nejde otevřít. A já strašně spěchám! ' +
   'Odsuň ostatní auta a vyjeď červeným vozem doleva.';
@@ -29,6 +36,12 @@ const reset = document.getElementById('reset');
 const trunk = document.getElementById('trunk');
 const use = document.getElementById('use');
 const nextLevel = document.getElementById('next-level');
+Object.assign(trunk.style, {
+  left: (laneLeft / canvas.width * 100) + '%',
+  top: (laneTop / canvas.height * 100) + '%',
+  width: (board.cell / canvas.width * 100) + '%',
+  height: (board.cell / canvas.height * 100) + '%'
+});
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 let positions;
@@ -51,7 +64,7 @@ function loadImage(filename) {
   return image;
 }
 
-const background = loadImage('background.png');
+const background = loadImage('garage-background.png');
 const carImages = vehicles.map(vehicle => loadImage(vehicle.image));
 
 function carRect(index, offset) {
@@ -106,6 +119,7 @@ function endDrag() {
 }
 
 function resetPuzzle() {
+  garageAudio.stopEffects();
   endDrag();
   positions = vehicles.map(vehicle => vehicle.axis === 'h' ? vehicle.x : vehicle.y);
   visual = positions.slice();
@@ -122,6 +136,7 @@ function checkExit() {
   if (positions[targetCar] === 0) {
     exitStarted = performance.now();
     phase = 'exiting';
+    garageAudio.play('roll', reducedMotion.matches ? .26 : .65);
   }
   updateControls();
 }
@@ -164,6 +179,7 @@ canvas.addEventListener('pointerup', event => {
   if (offset !== positions[index]) {
     history.push(positions.slice());
     positions[index] = offset;
+    if (index !== targetCar || offset !== 0) garageAudio.play('roll', .26);
   }
   endDrag();
   if (visual[index] === offset || reducedMotion.matches) {
@@ -191,6 +207,7 @@ undo.addEventListener('click', () => {
   if (undo.disabled) return;
   positions = history.pop();
   visual = positions.slice();
+  garageAudio.play('click');
   updateControls();
   requestDraw();
 });
@@ -198,6 +215,7 @@ reset.addEventListener('click', resetPuzzle);
 trunk.addEventListener('click', () => {
   if (phase !== 'trunk') return;
   phase = 'button';
+  garageAudio.play('trunk');
   message.textContent = 'Tlačítko B1! Tak konečně.';
   updateControls();
   use.focus({preventScroll: true});
@@ -206,6 +224,7 @@ trunk.addEventListener('click', () => {
 use.addEventListener('click', () => {
   if (phase !== 'button') return;
   phase = 'done';
+  garageAudio.play('ding');
   message.textContent = 'B1 odemčeno. Tak snad už mě nikdo nezdrží!';
   updateControls();
   nextLevel.focus({preventScroll: true});
@@ -227,7 +246,7 @@ function draw(time) {
   if (phase !== 'parking') {
     const duration = reducedMotion.matches ? 1 : 650;
     const progress = Math.min(1, Math.max(0, (time - exitStarted) / duration));
-    carOffset = -2.5 * progress;
+    carOffset = -exitDistance * progress;
     if (phase === 'exiting' && progress === 1) {
       phase = 'trunk';
       message.textContent = 'Auto je venku. Otevři zvýrazněný kufr.';
@@ -237,18 +256,29 @@ function draw(time) {
   }
 
   context.clearRect(0, 0, canvas.width, canvas.height);
-  if (background.naturalWidth) context.drawImage(background, 0, 0);
+  if (background.naturalWidth) {
+    context.drawImage(background, 0, 0);
+    // Reuse the floor markings from the supplied garage art at the larger scale.
+    context.drawImage(background, 109, 148, 105, 32, laneLeft, laneTop, board.x - laneLeft, board.cell);
+    const boardSide = board.size * board.cell;
+    context.drawImage(background, 214, 88, 180, 180, board.x, board.y, boardSide, boardSide);
+  }
   for (const [index, image] of carImages.entries()) {
     if (!image.naturalWidth) continue;
-    const {x, y} = carRect(index, index === targetCar ? carOffset : visual[index]);
-    context.drawImage(image, Math.round(board.x + x * board.cell + 2), Math.round(board.y + y * board.cell + 2));
+    const rect = carRect(index, index === targetCar ? carOffset : visual[index]);
+    context.drawImage(image,
+      Math.round(board.x + rect.x * board.cell + carInset),
+      Math.round(board.y + rect.y * board.cell + carInset),
+      rect.width * board.cell - 2 * carInset,
+      rect.height * board.cell - 2 * carInset
+    );
   }
   if (phase === 'button') {
     context.fillStyle = '#e4bd60';
-    context.fillRect(board.x - 70, board.y + 69, 12, 12);
+    context.fillRect(laneLeft + 10, laneTop + 11, 16, 16);
     context.fillStyle = '#202a33';
-    context.font = '8px monospace';
-    context.fillText('B1', board.x - 69, board.y + 78);
+    context.font = '10px monospace';
+    context.fillText('B1', laneLeft + 12, laneTop + 23);
   }
   if (snap || phase === 'exiting') requestDraw();
 }
