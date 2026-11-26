@@ -18,6 +18,7 @@ const vehicles = [
 ];
 const board = {x: 156, y: 64, cell: 40, size: 6};
 const targetCar = 0;
+const door = {x: 44, y: 93, width: 46, height: 50};
 const carInset = 3;
 const exitDistance = 2;
 const laneLeft = board.x - exitDistance * board.cell;
@@ -34,15 +35,28 @@ const count = document.getElementById('count');
 const undo = document.getElementById('undo');
 const reset = document.getElementById('reset');
 const trunk = document.getElementById('trunk');
-const use = document.getElementById('use');
-const nextLevel = document.getElementById('next-level');
-Object.assign(trunk.style, {
-  left: (laneLeft / canvas.width * 100) + '%',
-  top: (laneTop / canvas.height * 100) + '%',
-  width: (board.cell / canvas.width * 100) + '%',
-  height: (board.cell / canvas.height * 100) + '%'
-});
+const pickup = document.getElementById('pickup');
+const elevatorEntry = document.getElementById('elevator-entry');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const panel = createElevatorPanel({
+  floor: 'B2',
+  destination: 'B1',
+  onInstall: () => garageAudio.play('click'),
+  onTravel: () => window.location.assign('../')
+});
+
+function placeControl(button, {x, y, width, height}) {
+  Object.assign(button.style, {
+    left: (x / canvas.width * 100) + '%',
+    top: (y / canvas.height * 100) + '%',
+    width: (width / canvas.width * 100) + '%',
+    height: (height / canvas.height * 100) + '%'
+  });
+}
+
+placeControl(trunk, {x: laneLeft, y: laneTop, width: board.cell, height: board.cell});
+placeControl(pickup, {x: laneLeft + 3, y: laneTop + 3, width: 34, height: 34});
+placeControl(elevatorEntry, door);
 
 let positions;
 let visual;
@@ -51,6 +65,7 @@ let phase = 'parking';
 let drag = null;
 let snap = null;
 let exitStarted = 0;
+let doorStarted = null;
 let frame = null;
 
 function requestDraw() {
@@ -105,8 +120,8 @@ function updateControls() {
   count.textContent = 'Tahů: ' + history.length;
   undo.disabled = phase !== 'parking' || !history.length || Boolean(drag || snap);
   trunk.hidden = phase !== 'trunk';
-  use.hidden = phase !== 'button';
-  nextLevel.hidden = phase !== 'done';
+  pickup.hidden = phase !== 'pickup';
+  elevatorEntry.hidden = phase !== 'elevator';
 }
 
 function endDrag() {
@@ -127,6 +142,8 @@ function resetPuzzle() {
   phase = 'parking';
   snap = null;
   exitStarted = 0;
+  doorStarted = null;
+  panel.reset();
   message.textContent = parkedMessage;
   updateControls();
   requestDraw();
@@ -214,22 +231,47 @@ undo.addEventListener('click', () => {
 reset.addEventListener('click', resetPuzzle);
 trunk.addEventListener('click', () => {
   if (phase !== 'trunk') return;
-  phase = 'button';
+  phase = 'pickup';
   garageAudio.play('trunk');
-  message.textContent = 'Tlačítko B1! Tak konečně.';
+  message.textContent = 'Tlačítko B1! Vyzvedni ho z kufru.';
   updateControls();
-  use.focus({preventScroll: true});
-  requestDraw();
+  pickup.focus({preventScroll: true});
 });
-use.addEventListener('click', () => {
-  if (phase !== 'button') return;
-  phase = 'done';
+pickup.addEventListener('click', () => {
+  if (phase !== 'pickup') return;
+  phase = 'opening';
+  doorStarted = performance.now();
   garageAudio.play('ding');
-  message.textContent = 'B1 odemčeno. Tak snad už mě nikdo nezdrží!';
+  message.textContent = 'Mám tlačítko B1. Výtah se otevírá.';
   updateControls();
-  nextLevel.focus({preventScroll: true});
   requestDraw();
 });
+elevatorEntry.addEventListener('click', () => {
+  if (phase === 'elevator') panel.open();
+});
+
+function drawDoors(progress) {
+  const {x, y, width, height} = door;
+  const half = width / 2;
+  context.save();
+  context.beginPath();
+  context.rect(x, y, width, height);
+  context.clip();
+  context.fillStyle = '#111d29';
+  context.fillRect(x, y, width, height);
+  context.fillStyle = '#243444';
+  context.fillRect(x + 4, y + 4, width - 8, height - 12);
+  context.fillStyle = '#56616a';
+  context.fillRect(x + 5, y + height - 8, width - 10, 2);
+  context.fillStyle = '#313b48';
+  context.fillRect(x, y + height - 6, width, 6);
+  const travel = Math.round(progress * half);
+  if (travel < half) {
+    context.drawImage(background, x, y, half, height, x - travel, y, half, height);
+    context.drawImage(background, x + half, y, half, height, x + half + travel, y, half, height);
+  }
+  context.restore();
+}
 
 function draw(time) {
   frame = null;
@@ -255,9 +297,22 @@ function draw(time) {
     }
   }
 
+  let doorProgress = 0;
+  if (doorStarted !== null) {
+    const duration = reducedMotion.matches ? 1 : 760;
+    doorProgress = Math.min(1, Math.max(0, (time - doorStarted) / duration));
+    if (phase === 'opening' && doorProgress === 1) {
+      phase = 'elevator';
+      message.textContent = 'Nastup do výtahu a zasaď tlačítko B1.';
+      updateControls();
+      elevatorEntry.focus({preventScroll: true});
+    }
+  }
+
   context.clearRect(0, 0, canvas.width, canvas.height);
   if (background.naturalWidth) {
     context.drawImage(background, 0, 0);
+    if (doorProgress > 0) drawDoors(doorProgress);
     // Reuse the floor markings from the supplied garage art at the larger scale.
     context.drawImage(background, 109, 148, 105, 32, laneLeft, laneTop, board.x - laneLeft, board.cell);
     const boardSide = board.size * board.cell;
@@ -273,14 +328,7 @@ function draw(time) {
       rect.height * board.cell - 2 * carInset
     );
   }
-  if (phase === 'button') {
-    context.fillStyle = '#e4bd60';
-    context.fillRect(laneLeft + 10, laneTop + 11, 16, 16);
-    context.fillStyle = '#202a33';
-    context.font = '10px monospace';
-    context.fillText('B1', laneLeft + 12, laneTop + 23);
-  }
-  if (snap || phase === 'exiting') requestDraw();
+  if (snap || phase === 'exiting' || phase === 'opening') requestDraw();
 }
 
 resetPuzzle();

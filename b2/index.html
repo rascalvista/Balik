@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Spěchá! B2</title>
+  <link rel="stylesheet" href="../assets/elevator.css">
   <style>
     * { box-sizing: border-box; }
     body {
@@ -53,7 +54,7 @@
       gap: 8px;
       align-items: center;
     }
-    button, .next-level {
+    button {
       min-height: 44px;
       padding: 8px 12px;
       border: 1px solid #7d7156;
@@ -65,19 +66,32 @@
       touch-action: manipulation;
     }
     button:disabled { cursor: default; opacity: .55; }
-    button:focus-visible, .next-level:focus-visible {
+    button:focus-visible {
       outline: 2px solid #f2c65c;
       outline-offset: 3px;
     }
-    .primary {
-      margin-inline-start: auto;
-      background: #d6ac56;
-      color: #18232a;
+    .parking .floor-pickup {
+      position: absolute;
+      min-height: 0;
+      padding: 0;
+      border: 3px ridge var(--floor-button-rim);
+      border-radius: 50%;
+      background: var(--floor-button-brass);
+      color: var(--floor-button-ink);
+      font-size: clamp(11px, 3.4vw, 20px);
+      box-shadow: 0 0 9px #ffca667f;
     }
-    .next-level {
-      display: inline-flex;
-      align-items: center;
-      text-decoration: none;
+    .parking .floor-pickup::before {
+      position: absolute;
+      content: "";
+      inset: -8px;
+    }
+    .parking .elevator-entry {
+      min-height: 0;
+      padding: 0;
+      border: 2px solid #f2c65c;
+      border-radius: 3px;
+      background: #f2c65c14;
     }
     .trunk {
       position: absolute;
@@ -135,8 +149,9 @@
     }
     [hidden] { display: none; }
   </style>
+  <script src="../assets/elevator.js" defer></script>
   <script src="audio.js" defer></script>
-  <script src="game.js?v=2" defer></script>
+  <script src="game.js?v=3" defer></script>
 </head>
 <body>
   <main>
@@ -150,14 +165,14 @@
       </canvas>
       <span class="courier" role="img" aria-label="Kurýr"></span>
       <button class="trunk" id="trunk" type="button" aria-label="Otevřít kufr" hidden></button>
+      <button class="floor-button floor-pickup" id="pickup" type="button" aria-label="Vyzvednout tlačítko B1" hidden>B1</button>
+      <button class="elevator-entry" id="elevator-entry" type="button" aria-label="Nastoupit do výtahu" hidden></button>
     </div>
     <p class="message" id="message" role="status"></p>
     <div class="controls">
       <button id="undo" type="button" disabled>Zpět</button>
       <button id="reset" type="button">Reset</button>
       <span id="count">Tahů: 0</span>
-      <button class="primary" id="use" type="button" hidden>Použít tlačítko B1</button>
-      <a class="primary next-level" id="next-level" href="../" hidden>Pokračovat do B1</a>
     </div>
   </main>
 </body>
