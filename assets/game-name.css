@@ -1,5 +1,3 @@
-.game-brand-stage { container-type: inline-size; }
-
 .game-brand {
   --plate-shape: polygon(6.2% 0, 93.8% 0, 100% 18%, 100% 82%, 93.8% 100%, 6.2% 100%, 0 82%, 0 18%);
   position: absolute;
@@ -33,17 +31,6 @@
     linear-gradient(#ffefb031, transparent 40%, #2d19094e),
     repeating-linear-gradient(135deg, #2c251f 0 12%, #db8b23 12% 19%);
   box-shadow: inset 0 0 0 .12em #22160f9c;
-}
-
-.game-brand--home {
-  --plate-left: 21.65%;
-  --plate-top: 4.74%;
-  --plate-width: 56.7%;
-  --plate-height: 14.22%;
-  --parcel-width: 19.5%;
-  --parcel-top: -25%;
-  --word-size: 9.35cqw;
-  --word-size-english: 7.55cqw;
 }
 
 .game-brand--reception {

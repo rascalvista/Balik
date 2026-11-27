@@ -143,7 +143,31 @@
 }
 
 .hotel-home-art { display: block; width: 100%; height: 100%; }
-.hotel-home .game-brand { margin: 0; }
+.hotel-home-logo {
+  position: absolute;
+  inset: 1.25% auto auto 50%;
+  width: 60.4%;
+  margin: 0;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.hotel-home-logo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Trace the badge outline so the supplied pixels blend into the night sky. */
+  clip-path: polygon(
+    2.58% 33.03%, 8.28% 19.89%, 9.14% 19.16%, 21.48% 19.16%,
+    22.89% 15.88%, 27.11% 15.88%, 27.73% 16.79%, 28.75% 19.16%,
+    40.86% 19.16%, 42.58% 16.24%, 43.05% 10.58%, 44.38% 8.39%,
+    49.92% 2.37%, 50.62% 2.55%, 56.72% 10.40%, 57.19% 16.06%,
+    58.98% 19.16%, 70.62% 19.16%, 72.03% 16.24%, 73.44% 15.88%,
+    76.95% 15.88%, 77.81% 17.34%, 78.75% 19.16%, 91.25% 19.16%,
+    97.27% 33.03%, 97.27% 77.19%, 90.86% 93.07%, 9.30% 93.07%,
+    2.58% 77.19%
+  );
+}
 
 .home-hit {
   position: absolute;
