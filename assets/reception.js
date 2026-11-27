@@ -5,7 +5,6 @@ const find = selector => reception.querySelector(selector);
 const cases = [...reception.querySelectorAll('.case')];
 const clues = [...reception.querySelectorAll('.clue')];
 const dialog = find('#dialog');
-const modal = find('.modal');
 const reward = find('.reward');
 const lift = find('.elevator');
 const sound = find('.sound');
@@ -24,9 +23,19 @@ let retryTimer;
 const SoundContext = window.AudioContext || window.webkitAudioContext;
 let audioContext;
 let soundMixer;
-let musicBuffer;
+const musicBuffers = new Map();
 let musicVoice;
+let audioScene = 'room';
 const tones = new Set();
+const elevator = createElevatorPanel({
+  floor: '0',
+  destination: '1',
+  onPress: () => beep(true),
+  onTravel() {
+    phase = 'departed';
+    location.href = '../kuchyne/';
+  }
+});
 
 function stopMusic() {
   const voice = musicVoice;
@@ -35,21 +44,25 @@ function stopMusic() {
 }
 
 function startMusic() {
-  if (!audioContext || musicVoice || phase === 'departed' || !balikSound.isPageActive()) return;
+  if (!audioContext || musicVoice || audioScene === 'departing' || !balikSound.isPageActive()) return;
+  const inCabin = audioScene === 'cabin';
+  const file = inCabin ? '../audio/music.mp3' : '../audio/reception-jazz.mp3';
   const voice = {};
   musicVoice = voice;
-  musicBuffer ??= fetch('../audio/reception-jazz.mp3')
-    .then(response => {
-      if (!response.ok) throw new Error('Reception music failed to load');
-      return response.arrayBuffer();
-    })
-    .then(bytes => audioContext.decodeAudioData(bytes))
-    .catch(() => {
-      musicBuffer = undefined;
-      return null;
-    });
+  if (!musicBuffers.has(file)) {
+    musicBuffers.set(file, fetch(file)
+      .then(response => {
+        if (!response.ok) throw new Error('Music failed to load');
+        return response.arrayBuffer();
+      })
+      .then(bytes => audioContext.decodeAudioData(bytes))
+      .catch(() => {
+        musicBuffers.delete(file);
+        return null;
+      }));
+  }
 
-  musicBuffer.then(buffer => {
+  musicBuffers.get(file).then(buffer => {
     if (musicVoice !== voice) return;
     if (!buffer) {
       musicVoice = null;
@@ -63,7 +76,7 @@ function startMusic() {
     source.loop = true;
     source.connect(gain).connect(soundMixer.music);
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(.24, now + .45);
+    gain.gain.linearRampToValueAtTime(inCabin ? .32 : .24, now + .45);
     voice.source = source;
     source.onended = () => {
       source.disconnect();
@@ -72,6 +85,13 @@ function startMusic() {
     source.start(now);
   });
 }
+
+document.addEventListener('balik:elevator-audio', ({detail}) => {
+  if (audioScene === detail) return;
+  audioScene = detail;
+  stopMusic();
+  startMusic();
+});
 
 function activateAudio() {
   if (!balikSound.isPageActive()) return;
@@ -137,6 +157,7 @@ function renderClues() {
 function next(retry = false) {
   clearTimeout(retryTimer);
   phase = 'playing';
+  elevator.reset();
   current = drawPuzzle(hard ? decks.hard : decks.standard);
   renderClues();
   for (const suitcase of cases) {
@@ -144,7 +165,7 @@ function next(retry = false) {
     suitcase.classList.remove('correct', 'wrong');
     suitcase.replaceChildren();
   }
-  reward.hidden = lift.hidden = modal.hidden = true;
+  reward.hidden = lift.hidden = true;
   const rules = hard ? hardRules : standardRules;
   if (hard) {
     dialog.textContent = '„' + rules + '“';
@@ -178,18 +199,6 @@ cases.forEach((suitcase, index) => {
   });
 });
 
-function show(text, actions) {
-  modal.replaceChildren(document.createTextNode(text));
-  for (const [label, activate] of actions) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = label;
-    button.addEventListener('click', activate);
-    modal.append(button);
-  }
-  modal.hidden = false;
-}
-
 difficulty.addEventListener('click', () => {
   hard = !hard;
   reception.classList.toggle('is-hard', hard);
@@ -207,9 +216,7 @@ reward.addEventListener('click', () => {
 });
 
 lift.addEventListener('click', () => {
-  phase = 'departed';
-  stopMusic();
-  show('1 – Kuchyně odemčena.', [['Hrát znovu', () => next()]]);
+  if (phase === 'rewarded') elevator.open();
 });
 find('.reset').addEventListener('click', () => next());
 find('.back').addEventListener('click', () => {
@@ -217,11 +224,14 @@ find('.back').addEventListener('click', () => {
   if (document.referrer && new URL(document.referrer).origin === location.origin) history.back();
   else location.href = '../';
 });
-if (SoundContext) {
-  document.addEventListener('click', activateAudio, true);
-  window.addEventListener('pageshow', event => {
-    if (event.persisted && audioContext) activateAudio();
-  });
-}
+if (SoundContext) document.addEventListener('click', activateAudio, true);
+window.addEventListener('pageshow', event => {
+  if (!event.persisted) return;
+  if (phase === 'departed') {
+    phase = 'rewarded';
+    elevator.reset();
+  }
+  if (audioContext) activateAudio();
+});
 balikSound.bindSpeaker(sound, {painted: true});
 next();

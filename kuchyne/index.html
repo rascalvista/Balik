@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BALÍČEK · 1 – Kuchyně</title>
+  <link rel="preload" href="art/courier-walk.webp" as="image">
+  <link rel="stylesheet" href="../assets/balik-ui.css?v=2">
+  <link rel="stylesheet" href="kuchyne.css?v=1">
+  <script src="../assets/game-name.js" defer></script>
+  <script src="../assets/balik-sound.js?v=2" defer></script>
+  <script src="kuchyne.js?v=1" defer></script>
+  <script src="../assets/balik-menu.js?v=6" defer></script>
+</head>
+<body>
+  <main class="game" data-floor="1">
+    <header class="game-head">
+      <button class="head-button" id="sound-toggle" type="button" aria-label="Zvuk"></button>
+      <div class="game-heading">
+        <div class="brand"><img src="../assets/brand-parcel.png" alt=""><span data-game-name>BALÍČEK</span></div>
+        <h1><span>1</span> Kuchyně</h1>
+      </div>
+      <button class="head-button" id="balik-menu-toggle" type="button" aria-label="Menu"><span class="menu" aria-hidden="true"></span></button>
+    </header>
+
+    <section class="orders" aria-label="Objednávky">
+      <div class="orders-heading"><h2>Objednávky</h2><span class="served"></span></div>
+      <ul class="tickets"></ul>
+    </section>
+
+    <section class="kitchen" aria-label="Hotelová kuchyně">
+      <span class="station" hidden></span>
+      <div class="kitchen-effects"></div>
+      <div class="actor" aria-label="Kurýr se žlutým batohem">
+        <span class="player-sprite"></span><img class="held" alt="" hidden>
+      </div>
+      <div class="stick" role="group" aria-label="Osmisměrný ovladač. Táhni palcem a uvolni pro zastavení.">
+        <div class="stick-marks" aria-hidden="true"></div><span class="stick-cap" aria-hidden="true"></span>
+      </div>
+      <button class="action" type="button" disabled><span class="action-glyph"></span><span class="action-label">Akce</span></button>
+    </section>
+
+    <footer class="status"><span class="status-name">Kurýr</span><span class="status-message" role="status">„Dobře. Ale vařím naposledy.“</span></footer>
+    <button id="reset" type="button" hidden>Restartovat patro</button>
+  </main>
+
+  <dialog class="kitchen-dialog" id="kitchen-panel" aria-labelledby="panel-title">
+    <h2 id="panel-title"></h2>
+    <div class="panel-body"></div>
+    <form method="dialog"><button class="panel-close">Zavřít</button></form>
+  </dialog>
+</body>
+</html>

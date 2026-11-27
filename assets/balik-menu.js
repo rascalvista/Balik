@@ -9,7 +9,8 @@
   const floors = [
     ['B2', 'Garáže', 'b2/'],
     ['B1', 'Strojovna', ''],
-    ['0', 'Recepce (test)', 'recepce-test/']
+    ['0', 'Recepce (test)', 'recepce-test/'],
+    ['1', 'Kuchyně', 'kuchyne/']
   ];
 
   const dialog = document.createElement('dialog');
