@@ -2,7 +2,7 @@
   'use strict';
 
   const AudioEngine = window.AudioContext || window.webkitAudioContext;
-  const trackUrl = new URL('../audio/title-rocknroll.mp3', document.currentScript.src);
+  const trackUrl = new URL('../audio/title-rocknroll.mp3?v=2', document.currentScript.src);
   let context;
   let mixer;
   let track;
