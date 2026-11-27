@@ -14,6 +14,11 @@
   const plateFocus = find('.plate-focus');
   const guideTarget = find('.guide-target');
   const cook = find('.cook');
+  const cookCarry = find('.cook-carry');
+  const preview = find('.recipe-preview');
+  const kitchenLift = find('.kitchen-lift');
+  const liftReturn = find('.lift-return');
+  const handoff = find('.handoff');
   const action = find('.action');
   const actionLabel = find('.action-label');
   const actionGlyph = find('.action-glyph');
@@ -33,17 +38,18 @@
     egg: ['Vejce', 'raw-egg'], pasta: ['Těstoviny', 'pasta'], sauce: ['Omáčka', 'sauce'],
     water: ['Voda', 'water'], veg: ['Zelenina', 'tomato'], choppedVeg: ['Nakrájená zelenina', 'chopped-veg'],
     beef: ['Hovězí', 'beef'], spice: ['Koření', 'spice'], ham: ['Šunka', 'ham'], choppedHam: ['Nakrájená šunka', 'chopped-ham'],
-    cheese: ['Sýr', 'cheese'], rice: ['Rýže', 'rice'], chicken: ['Kuřecí', 'chicken'], choppedChicken: ['Nakrájené kuřecí', 'chopped-chicken']
+    cheese: ['Sýr', 'cheese'], choppedCheese: ['Nakrájený sýr', 'chopped-cheese'],
+    rice: ['Rýže', 'rice'], chicken: ['Kuřecí', 'chicken'], choppedChicken: ['Nakrájené kuřecí', 'chopped-chicken']
   };
-  const chopped = {veg: 'choppedVeg', ham: 'choppedHam', chicken: 'choppedChicken'};
-  const prepNames = {choppedVeg: 'zeleninu', choppedHam: 'šunku', choppedChicken: 'kuřecí'};
+  const chopped = {veg: 'choppedVeg', ham: 'choppedHam', chicken: 'choppedChicken', cheese: 'choppedCheese'};
+  const prepNames = {choppedVeg: 'zeleninu', choppedHam: 'šunku', choppedChicken: 'kuřecí', choppedCheese: 'sýr'};
   const recipes = {
     egg: {name: 'Smažené vejce', art: 'fried-egg', base: ['egg'], seconds: 5, finish: []},
     pasta: {name: 'Špagety', art: 'spaghetti', base: ['pasta'], seconds: 12, finish: ['sauce'], limit: 150, pot: true},
     soup: {name: 'Zeleninová polévka', art: 'soup', base: ['water', 'choppedVeg'], seconds: 15, finish: [], limit: 175, pot: true},
     steak: {name: 'Steak', art: 'steak', base: ['beef'], seconds: 10, finish: ['spice'], limit: 150},
-    omelet: {name: 'Omeleta', art: 'omelet', base: ['egg', 'choppedHam', 'cheese'], seconds: 8, finish: [], limit: 185},
-    risotto: {name: 'Kuřecí rizoto', art: 'risotto', base: ['rice', 'choppedChicken', 'veg'], seconds: 18, finish: [], limit: 210}
+    omelet: {name: 'Omeleta', art: 'omelet', base: ['egg', 'choppedHam', 'choppedCheese'], seconds: 8, finish: [], limit: 185},
+    risotto: {name: 'Kuřecí rizoto', art: 'risotto', base: ['rice', 'choppedChicken', 'veg'], seconds: 18, finish: [], limit: 210, pot: true}
   };
   const queue = ['egg', 'pasta', 'steak', 'soup', 'omelet', 'risotto'];
   const readyGrace = 45;
@@ -52,14 +58,14 @@
   const burnerRows = [41.2, 45.5, 49.7, 54];
   const stove = {type: 'stove', name: 'Sporák', x: 20.3, label: [10, 31]};
   const counters = [39.4, 46.1, 52.5].map((y, index) => ({type: 'plate', index, name: `Talíř ${index + 1}`, x: 76.6, y, label: [84, 58.7]}));
+  const cuttingSides = [[48, 38.7, 4, 34], [48, 64.5, 0, 34], [32, 52.5, 2, 22], [65, 52.5, 6, 22]];
+  const coachHome = [34, 72];
   const stations = [
     {type: 'stock', name: 'Špajz', items: pantry, x: 25, y: 32.9, label: [25, 27]},
     {type: 'stock', name: 'Lednice', items: fridge, x: 49.2, y: 33.4, label: [49.5, 12.4]},
     {type: 'serve', name: 'Výdej', x: 77.5, y: 32.7, label: [77.4, 24.6]},
-    {type: 'chop', name: 'Prkénko', x: 48, y: 38.7, label: [48, 57.8]},
-    {type: 'chop', name: 'Prkénko', x: 48, y: 64.5, label: [48, 57.8]},
+    ...cuttingSides.map(([x, y, facing, reach]) => ({type: 'chop', name: 'Prkénko', x, y, facing, reach, label: [48, 57.8]})),
     {type: 'trash', name: 'Koš', x: 16, y: 75.5, label: [10, 69.4]},
-    {type: 'finish', name: 'Výtah', x: 50, y: 74.8, label: [50, 81.2]},
     stove, ...counters
   ];
   const obstacles = [[2, 15.5, 29, 66.6], [34.4, 62, 40.2, 61.8], [80.2, 96.7, 32, 67.5], [4, 14.1, 71.3, 80.2], [29.8, 70, 77.1, 90]];
@@ -241,13 +247,15 @@
   }
 
   function openCoach() {
-    openPanel('Kuchtík', 'Jdeme vařit');
+    if (state.scene || state.reward) return;
+    const canDemonstrate = !state.started;
+    openPanel('Kuchtík', canDemonstrate ? 'Přeskočit ukázku' : 'Jdeme vařit');
     const text = document.createElement('p');
     text.className = 'cook-intro';
     const portrait = document.createElement('img');
     portrait.src = asset('cook');
     portrait.alt = '';
-    text.append(portrait, state.completed ? 'Jídlo dej na talíř a pak ho odnes do výdeje.' : 'Palcem táhni po levém ovladači. Šipka ti ukáže, kam jít.');
+    text.append(portrait, canDemonstrate ? 'Ukážu ti, jak usmažit a vydat první vejce.' : 'Palcem táhni po levém ovladači. Šipka ti ukáže, kam jít.');
     const steps = document.createElement('ol');
     steps.className = 'cook-steps';
     for (const [icon, label] of [['raw-egg', 'Vezmi vejce'], ['pan', 'Usmaž ho'], ['fried-egg', 'Dej na talíř'], ['cloche', 'Odnes do výdeje']]) {
@@ -259,11 +267,14 @@
       steps.append(step);
     }
     panelBody.append(text, steps);
+    if (canDemonstrate) panelButton('Předveď mi to', runDemo).focus();
   }
   cook.addEventListener('click', openCoach);
 
   function viewRecipe(key) {
+    if (state.scene || state.reward) return;
     const recipe = recipes[key];
+    setPreview(key);
     openPanel(recipe.name);
     const list = document.createElement('ol');
     const prep = recipe.base.filter(kind => prepNames[kind]);
@@ -281,6 +292,23 @@
     }
     panelBody.append(list);
   }
+
+  function setPreview(key) {
+    if (!key || preview.dataset.recipe === key) return;
+    const recipe = recipes[key];
+    preview.dataset.recipe = key;
+    preview.setAttribute('aria-label', `Obrázkový recept – ${recipe.name}`);
+    const ingredientsRow = [...recipe.base, ...recipe.finish].map(kind => {
+      const [name, image] = ingredients[kind];
+      return `<img src="${asset(image)}" alt="${name}">`;
+    });
+    const stages = [recipe.pot ? ['pot', 'Hrnec'] : ['pan', 'Pánev'], [recipe.art, 'Talíř'], ['cloche', 'Výdej']];
+    preview.innerHTML = `<strong>${recipe.name}</strong><span class="recipe-preview-row">${ingredientsRow.join('')}</span>` +
+      `<span class="recipe-preview-row">${stages.map(([image, name]) => `<img src="${asset(image)}" alt="${name}">`).join('<span class="recipe-arrow" aria-hidden="true">›</span>')}</span>`;
+  }
+  preview.addEventListener('click', () => {
+    if (preview.dataset.recipe) viewRecipe(preview.dataset.recipe);
+  });
 
   function openTicket(key) {
     const recipe = recipes[key];
@@ -302,11 +330,18 @@
       state.orders.push(openTicket(queue[state.next++]));
     }
     state.orders.forEach((order, index) => order.wrapper.classList.toggle('is-current', index === 0));
+    if (!state.orders.some(order => order.key === preview.dataset.recipe)) setPreview(state.orders[0]?.key);
     served.innerHTML = `Vydáno <strong>${state.completed} / ${queue.length}</strong>`;
   }
 
   function moveItem(food, gesture, cue) {
     state.held = food;
+    if (food?.key) setPreview(food.key);
+    else if (food?.kind) {
+      const possible = state.orders.find(({key}) => recipes[key].base.includes(food.kind) ||
+        recipes[key].base.includes(chopped[food.kind]) || recipes[key].finish.includes(food.kind));
+      setPreview(possible?.key);
+    }
     state.gesture = {time: state.time, gesture};
     sound(cue);
   }
@@ -387,6 +422,7 @@
         if (!matches.length) return invalid('Tahle surovina se sem nehodí. Klepnutím na objednávku otevřeš recept.');
         moveItem(null, 'put', 'put');
         const ready = matches.find(([, recipe]) => recipe.base.length === parts.length);
+        setPreview((ready ?? matches[0])[0]);
         if (ready) {
           const [key, recipe] = ready;
           state.burners[index] = {key, until: state.time + recipe.seconds, notified: false};
@@ -430,20 +466,6 @@
     return ['Na talíř', 'cloche'];
   }
 
-  function award() {
-    openPanel('Tlačítko 2');
-    const text = document.createElement('p');
-    text.textContent = '„Dobrá práce, šéfe. Tady máš tlačítko do restaurace.“';
-    panelBody.append(text);
-    panelButton('Vzít tlačítko 2', () => {
-      state.reward = true;
-      panel.close();
-      say('Výtah', 'Máš tlačítko 2 – Restaurace.');
-      sound('ready');
-      refresh();
-    });
-  }
-
   function serve() {
     const food = state.held;
     if (food.key && !food.burned && !food.plated) return invalid('Nejdřív polož jídlo na talíř na pultu vpravo.');
@@ -456,7 +478,7 @@
     moveItem(null, 'put', 'serve');
     say('Výdej', state.completed === 1 ? 'První jídlo je venku! Klepnutím na objednávku otevřeš další recept.' : `${nameOf(food)} vydáno.`);
     refill();
-    if (state.completed === queue.length) award();
+    if (state.completed === queue.length) runFinale();
   }
 
   function details(station) {
@@ -470,9 +492,7 @@
       moveItem(null, 'put', 'put');
       say('Koš', 'Prázdné ruce. Můžeš pokračovat.');
     })];
-    if (state.completed === queue.length && !state.reward) return ['Zvednout', 'cloche', award];
-    if (state.reward) return ['Tlačítko 2', 'cloche', () => say('Výtah', 'Tlačítko 2 máš. Restaurace přijde v dalším patře.')];
-    return ['Výtah', 'cloche', () => say('Šéfkuchař', `Za ${queue.length} vydaných jídel dostaneš tlačítko 2.`)];
+    return ['Akce', 'cloche'];
   }
 
   function nearest() {
@@ -483,7 +503,7 @@
       // The actor's position is at their feet. Align plate interactions with their hands.
       const dy = (state.y - y) * board.clientHeight / 100 - (station.type === 'plate' ? 24 : 0);
       const distance = Math.hypot((state.x - station.x) * board.clientWidth / 100, dy);
-      const reach = station === stove ? 46 : station.type === 'plate' ? 25 : 34;
+      const reach = station.reach ?? (station === stove ? 46 : station.type === 'plate' ? 25 : 34);
       if (distance < shortest && distance < reach) {
         shortest = distance;
         best = station;
@@ -500,6 +520,9 @@
   function selectBurner(index) {
     if (nearest() !== stove) return;
     state.selectedBurner = index;
+    const burner = state.burners[index];
+    if (burner.key) setPreview(burner.key);
+    else if (burner.parts.length) setPreview(matchingRecipes(burner.parts)[0]?.[0]);
     markBurner();
     refresh();
   }
@@ -565,7 +588,8 @@
   }
 
   function showWork(view, food, text, mode = '') {
-    const source = food ? asset(picture(food)) : '';
+    const icon = view.element.classList.contains('has-pot') && food?.kind === 'water' ? 'water-in-pot' : food && picture(food);
+    const source = icon ? asset(icon) : '';
     if (food && view.image.getAttribute('src') !== source) view.image.src = source;
     view.image.hidden = !food;
     if (view.time.textContent !== text) view.time.textContent = text;
@@ -603,6 +627,7 @@
       const vessel = asset(pot ? 'pot' : 'pan');
       if (view.vessel.getAttribute('src') !== vessel) view.vessel.src = vessel;
       view.vessel.classList.toggle('is-pot', Boolean(pot));
+      view.element.classList.toggle('has-pot', Boolean(pot));
       if (!burner.key) {
         const latest = burner.parts[burner.parts.length - 1];
         showWork(view, latest ? item(latest) : null, '');
@@ -633,13 +658,14 @@
   }
 
   function useAction() {
-    if (panel.open || find('#balik-menu')?.open) return;
+    if (state.scene || state.reward || panel.open || find('#balik-menu')?.open) return;
     const station = nearest();
     const [, , callback] = details(station);
     if (!callback) return;
     state.started = true;
     state.facing = closestDirection(station);
     callback();
+    if (state.scene) return;
     refresh();
     tickTimers();
   }
@@ -649,9 +675,8 @@
   function closestDirection(station) {
     if (station === stove) return 6;
     if (station.type === 'plate') return 2;
-    if (station.type === 'chop') return state.y < 50 ? 4 : 0;
+    if (station.type === 'chop') return station.facing;
     if (station.type === 'trash') return 6;
-    if (station.type === 'finish') return 4;
     return 0;
   }
   function sticks(index, x = 0, y = 0) {
@@ -685,7 +710,7 @@
     if (captured !== undefined && stick.hasPointerCapture(captured)) stick.releasePointerCapture(captured);
   }
   stick.addEventListener('pointerdown', event => {
-    if (pointer !== undefined || event.button !== 0 || isZoomed()) return;
+    if (state.scene || state.reward || pointer !== undefined || event.button !== 0 || isZoomed()) return;
     pointer = event.pointerId;
     stick.setPointerCapture(pointer);
     slide(event);
@@ -696,7 +721,7 @@
   }
   const walkKeys = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'w', 'd', 's', 'a'];
   document.addEventListener('keydown', event => {
-    if (panel.open || find('#balik-menu')?.open || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (state.scene || state.reward || panel.open || find('#balik-menu')?.open || event.ctrlKey || event.metaKey || event.altKey) return;
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
     if (walkKeys.includes(key)) {
       event.preventDefault();
@@ -754,10 +779,142 @@
     place(actor, state.x, state.y);
   }
 
+  const elevator = createElevatorPanel({
+    floor: '1',
+    destination: '2',
+    onPress: () => sound('put'),
+    onTravel() {
+      openPanel('2 – Restaurace', 'Hotovo');
+      const text = document.createElement('p');
+      text.textContent = 'Tlačítko 2 je zacvaknuté v panelu. Kuchyně je hotová.';
+      panelBody.append(text);
+      liftReturn.hidden = true;
+    }
+  });
+  liftReturn.addEventListener('click', () => elevator.open());
+
+  function setScene(name) {
+    state.scene = name;
+    stopInput();
+    game.classList.toggle('is-sequence', Boolean(name));
+    menuToggle.disabled = Boolean(name);
+    if (name) {
+      stationLabel.hidden = plateFocus.hidden = burnerControls.hidden = burnerFocus.hidden = guideTarget.hidden = true;
+    }
+    nearby = undefined;
+  }
+
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  function animatePosition(element, x, y, duration, easing = 'linear') {
+    const animation = element.animate([
+      {left: element.style.left, top: element.style.top},
+      {left: `${x}%`, top: `${y}%`}
+    ], {duration, easing});
+    place(element, x, y);
+    return animation.finished;
+  }
+
+  async function runPath(element, path, speed) {
+    element.classList.add('is-running');
+    for (const [x, y] of path) {
+      const dx = (x - parseFloat(element.style.left)) * board.clientWidth / 100;
+      const dy = (y - parseFloat(element.style.top)) * board.clientHeight / 100;
+      if (Math.hypot(dx, dy) < 1) continue;
+      if (element === actor) {
+        const direction = nearestAngle(dx, dy);
+        actor.dataset.facing = directionNames[direction];
+        sprite.dataset.atlas = 'walk';
+        sprite.style.backgroundPosition = `0% ${walkRows[direction] * 100 / 7}%`;
+        state.x = x;
+        state.y = y;
+      }
+      await animatePosition(element, x, y, Math.hypot(dx, dy) / speed * 1000);
+    }
+    element.classList.remove('is-running');
+  }
+
+  function holdForDemo(name) {
+    cookCarry.hidden = !name;
+    if (name) cookCarry.src = asset(name);
+  }
+
+  async function runDemo() {
+    if (state.scene || state.started) return;
+    panel.close();
+    setScene('demo');
+    const speed = 370;
+    say('Kuchtík', '1. V lednici vezmu vejce.');
+    await runPath(cook, [[27, 68], [27, 35], [49, 34]], speed);
+    holdForDemo('raw-egg');
+    sound('pickup');
+    await pause(330);
+    say('Kuchtík', '2. Na pánvi ho usmažím.');
+    await runPath(cook, [[27, 35], [22, 43]], speed);
+    holdForDemo();
+    showWork(stoveViews[0], dish('egg'), 'Smaží se', 'cooking');
+    sound('put');
+    await pause(620);
+    showWork(stoveViews[0], dish('egg'), 'Hotovo', 'ready');
+    sound('ready');
+    await pause(320);
+    showWork(stoveViews[0], null, '');
+    holdForDemo('fried-egg-cooking');
+    say('Kuchtík', '3. Hotové vejce dám na talíř.');
+    await runPath(cook, [[25, 35], [76.6, 35], [76.6, counters[0].y + 2400 / board.clientHeight]], speed);
+    holdForDemo();
+    showWork(plateViews[0], {...dish('egg'), plated: true}, '');
+    sound('put');
+    await pause(440);
+    showWork(plateViews[0], null, '');
+    holdForDemo('fried-egg');
+    say('Kuchtík', '4. Talíř odnesu do výdeje.');
+    await runPath(cook, [[77.5, 32.7]], speed);
+    holdForDemo();
+    sound('serve');
+    await pause(380);
+    say('Kuchtík', 'Pomoz mi se šesti jídly a dám ti tlačítko 2.');
+    await runPath(cook, [[70, 35], [70, 69], [34, 69], coachHome], speed);
+    setScene(null);
+    guideStep = null;
+    tickTimers();
+    refresh();
+    say('Kuchtík', 'Za šest jídel dostaneš tlačítko 2. Začni vejcem z lednice.');
+  }
+
+  async function runFinale() {
+    setScene('finale');
+    say('Kuchtík', 'Všech šest jídel je venku. Nesu ti tlačítko 2!');
+    await runPath(cook, [[27, 68], [27, 35], [Math.min(73, state.x - 7), state.y + 5]], 350);
+
+    say('Kuchtík', 'Díky za pomoc. Tady máš tlačítko 2.');
+    place(handoff, parseFloat(cook.style.left) + 3, parseFloat(cook.style.top) - 24 * 100 / board.clientHeight);
+    handoff.hidden = false;
+    await animatePosition(handoff, state.x, state.y - 28 * 100 / board.clientHeight, 570, 'ease-in-out');
+    sound('ready');
+    await pause(430);
+    handoff.hidden = true;
+
+    preview.hidden = true;
+    kitchenLift.hidden = false;
+    await pause(160);
+    kitchenLift.classList.add('is-open');
+    sound('put');
+    say('Kurýr', 'Výtah je otevřený. Zacvaknu tlačítko 2 do panelu.');
+    await pause(360);
+    await runPath(actor, [[71.5, 35], [71.5, 69], [50, 69], [50, 94]], 330);
+    actor.hidden = true;
+    state.reward = true;
+    setScene(null);
+    game.classList.add('is-finished');
+    liftReturn.hidden = false;
+    elevator.open();
+  }
+
   function update(timestamp) {
     const delta = lastTime === undefined ? 0 : Math.min(.05, (timestamp - lastTime) / 1000);
     lastTime = timestamp;
-    if (!document.hidden && !panel.open && !find('#balik-menu')?.open) {
+    if (!state.scene && !state.reward && !document.hidden && !panel.open && !find('#balik-menu')?.open) {
       const direction = directionFromInput();
       if (state.started) state.time += delta;
       drawCourier(direction, delta);
@@ -768,11 +925,18 @@
   }
 
   function reset() {
+    if (state?.scene) return;
     stopInput();
+    elevator.reset();
     guideStep = null;
     tickets.replaceChildren();
     state = {x: 50, y: 73.4, facing: 0, held: null, gesture: null, chopping: null, time: 0, started: false,
       completed: 0, next: 0, orders: [], selectedBurner: 0, burners: burnerRows.map(() => ({parts: []})), plates: counters.map(() => null), reward: false};
+    game.classList.remove('is-finished');
+    kitchenLift.classList.remove('is-open');
+    kitchenLift.hidden = liftReturn.hidden = handoff.hidden = true;
+    preview.hidden = actor.hidden = false;
+    place(cook, ...coachHome);
     markBurner();
     refill();
     drawCourier(-1, 0);

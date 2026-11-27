@@ -6,10 +6,12 @@
   <title>BALÍČEK · 1 – Kuchyně</title>
   <link rel="preload" href="art/courier-walk.webp" as="image">
   <link rel="stylesheet" href="../assets/balik-ui.css?v=2">
-  <link rel="stylesheet" href="kuchyne.css?v=5">
+  <link rel="stylesheet" href="../assets/elevator.css?v=2">
+  <link rel="stylesheet" href="kuchyne.css?v=6">
   <script src="../assets/game-name.js" defer></script>
   <script src="../assets/balik-sound.js?v=2" defer></script>
-  <script src="kuchyne.js?v=4" defer></script>
+  <script src="../assets/elevator.js?v=3" defer></script>
+  <script src="kuchyne.js?v=5" defer></script>
   <script src="../assets/balik-menu.js?v=6" defer></script>
 </head>
 <body>
@@ -34,10 +36,16 @@
       <span class="plate-focus" aria-hidden="true" hidden></span>
       <span class="guide-target" aria-hidden="true" hidden></span>
       <div class="kitchen-effects"></div>
-      <button class="cook" type="button" aria-label="Kuchtík – ukázat postup"><img src="art/cook.png" alt=""></button>
+      <button class="cook" type="button" aria-label="Kuchtík – ukázat postup"><span class="cook-body"></span><img class="cook-carry" alt="" hidden></button>
       <div class="actor" aria-label="Kurýr se žlutým batohem">
         <span class="player-sprite"></span><img class="held" alt="" hidden>
       </div>
+      <button class="recipe-preview" type="button" aria-label="Otevřít obrázkový recept"></button>
+      <div class="kitchen-lift" aria-hidden="true" hidden>
+        <img src="art/lift-leaf-left.webp" alt=""><img src="art/lift-leaf-right.webp" alt="">
+      </div>
+      <button class="lift-return" type="button" aria-label="Otevřít panel výtahu" hidden></button>
+      <span class="floor-button handoff" aria-hidden="true" hidden>2</span>
       <div class="stick" role="group" aria-label="Osmisměrný ovladač. Táhni palcem a uvolni pro zastavení.">
         <div class="stick-marks" aria-hidden="true"></div><span class="stick-cap" aria-hidden="true"></span>
       </div>

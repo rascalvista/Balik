@@ -293,6 +293,7 @@ h1 span {
 
 .burner-pan.is-pot { transform: translate(-50%, -50%); }
 .stove-item img { width: 22px; height: 22px; margin: 1px 0 0 4px; }
+.stove-item.has-pot img { width: 21px; height: 21px; margin: 0 0 0 5px; transform: translateY(-6px); }
 
 .burner-focus, .plate-focus {
   position: absolute;
@@ -332,7 +333,26 @@ h1 span {
   transform: translate(-50%, -100%);
 }
 
-.cook img { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+.cook-body {
+  display: block;
+  width: 43px;
+  height: 100%;
+  margin: auto;
+  background: url('art/cook.png') center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+.cook.is-running .cook-body {
+  background-image: url('art/cook-run.png');
+  background-size: 200% 100%;
+  animation: cook-footsteps .17s steps(1, end) infinite;
+}
+@keyframes cook-footsteps { from { background-position: left; } 50%, to { background-position: right; } }
+.cook-carry { position: absolute; width: 22px; height: 22px; top: 46%; right: 2px; image-rendering: pixelated; }
+.game.is-sequence .cook::after { display: none; }
+.game.is-sequence .cook, .game.is-sequence .recipe-preview { pointer-events: none; }
+.game:is(.is-sequence, .is-finished) :is(.stick, .action) { visibility: hidden; }
+.actor.is-running .player-sprite { animation: courier-run .4s steps(8, end) infinite; }
+@keyframes courier-run { from { background-position-x: 0%; } to { background-position-x: 114.2857%; } }
 .cook::after {
   content: '…';
   position: absolute;
@@ -358,10 +378,10 @@ h1 span {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
-  border: 1px solid #aa8551;
+  border: 1px solid #fff1ac;
   border-radius: 6px;
-  background: #1d2b24f2;
-  box-shadow: 0 3px 12px #0008;
+  background: #f0c75c;
+  box-shadow: 0 0 0 2px #563b20, 0 3px 12px #000a;
 }
 
 .burner-controls button {
@@ -371,10 +391,10 @@ h1 span {
   align-items: center;
   gap: 1px;
   padding: 2px 0;
-  border: 1px solid #a98c5a;
+  border: 1px solid #8d632b;
   border-radius: 4px;
-  background: #344136;
-  color: #f9e0ad;
+  background: #fff0b4;
+  color: #392616;
   line-height: 1;
   -webkit-tap-highlight-color: transparent;
 }
@@ -382,11 +402,75 @@ h1 span {
 .burner-number { font: 700 13px/1 var(--display); }
 .burner-item { font: 700 10px/1.06 var(--label); overflow-wrap: anywhere; }
 .burner-status { font: 700 10px/1 var(--label); font-variant-numeric: tabular-nums; }
-.burner-controls [data-mode="cooking"] .burner-status { color: #ffcc80; }
-.burner-controls [data-mode="ready"] .burner-status { color: #bde5b3; }
-.burner-controls [data-mode="burned"] .burner-status { color: #ffaf9c; }
-.burner-controls [aria-pressed="true"] { border-color: #ffdda4; background: #59432c; box-shadow: inset 0 0 0 1px #ffdda4; }
+.burner-controls [data-mode="cooking"] .burner-status { color: #764112; }
+.burner-controls [data-mode="ready"] .burner-status { color: #305e2c; }
+.burner-controls [data-mode="burned"] .burner-status { color: #8a291c; }
+.burner-controls [aria-pressed="true"] { border-color: #352618; background: #fff8d9; box-shadow: inset 0 0 0 1px #352618; }
 .burner-controls button:focus-visible { outline: 2px solid #fff4cf; outline-offset: 2px; }
+
+.recipe-preview {
+  position: absolute;
+  z-index: 2;
+  left: 29.5%;
+  right: 29.5%;
+  top: 75.9%;
+  bottom: 0;
+  padding: 6px 4px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 2px ridge #b28d56;
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+  background: repeating-linear-gradient(0deg, #1c241c24 0 1px, transparent 1px 5px), linear-gradient(#35453a, #1b2820);
+  box-shadow: inset 0 0 0 3px #59462e;
+  color: #ffe6b0;
+}
+.recipe-preview strong { font: 700 12px/1.05 var(--display); }
+.recipe-preview-row { display: flex; align-items: center; justify-content: center; gap: 2px; max-width: 100%; }
+.recipe-preview-row img { width: clamp(21px, 6.6vw, 28px); aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; }
+.recipe-preview-row .recipe-arrow { color: #e9ba66; font: 700 12px/1 var(--label); }
+.recipe-preview:focus-visible { outline: 2px solid #ffdd83; outline-offset: -4px; }
+
+.kitchen-lift {
+  position: absolute;
+  z-index: 2;
+  left: 40.52%;
+  top: 81.15%;
+  width: 18.78%;
+  height: 14.64%;
+  display: flex;
+  overflow: hidden;
+  background: linear-gradient(90deg, #2a1910, #704629 44%, #503220 70%, #281810);
+  box-shadow: inset 0 9px 13px #22130e, inset 0 -6px 8px #f7a54f52;
+}
+.kitchen-lift img { display: block; width: 50%; height: 100%; transition: transform .65s ease-in-out; }
+.kitchen-lift.is-open img:first-child { transform: translateX(-101%); }
+.kitchen-lift.is-open img:last-child { transform: translateX(101%); }
+.lift-return {
+  position: absolute;
+  z-index: 3;
+  left: 41%;
+  top: 81%;
+  width: 18%;
+  height: 17%;
+  border: 0;
+  background: transparent;
+}
+.lift-return:focus-visible { outline: 2px solid #fff4cf; }
+.handoff {
+  position: absolute;
+  z-index: 5;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 1px 10px #ffbf5c;
+  font-size: 16px;
+}
 
 .stick {
   --mark-radius: 41px;
