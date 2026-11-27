@@ -27,9 +27,9 @@
 
   const ingredients = {
     egg: ['Vejce', 'raw-egg'], pasta: ['Těstoviny', 'pasta'], sauce: ['Omáčka', 'sauce'],
-    water: ['Voda', 'water'], veg: ['Zelenina', 'tomato'], choppedVeg: ['Nakrájená zelenina', 'tomato'],
-    beef: ['Hovězí', 'beef'], spice: ['Koření', 'spice'], ham: ['Šunka', 'ham'], choppedHam: ['Nakrájená šunka', 'ham'],
-    cheese: ['Sýr', 'cheese'], rice: ['Rýže', 'rice'], chicken: ['Kuřecí', 'chicken'], choppedChicken: ['Nakrájené kuřecí', 'chicken']
+    water: ['Voda', 'water'], veg: ['Zelenina', 'tomato'], choppedVeg: ['Nakrájená zelenina', 'chopped-veg'],
+    beef: ['Hovězí', 'beef'], spice: ['Koření', 'spice'], ham: ['Šunka', 'ham'], choppedHam: ['Nakrájená šunka', 'chopped-ham'],
+    cheese: ['Sýr', 'cheese'], rice: ['Rýže', 'rice'], chicken: ['Kuřecí', 'chicken'], choppedChicken: ['Nakrájené kuřecí', 'chopped-chicken']
   };
   const chopped = {veg: 'choppedVeg', ham: 'choppedHam', chicken: 'choppedChicken'};
   const prepNames = {choppedVeg: 'zeleninu', choppedHam: 'šunku', choppedChicken: 'kuřecí'};
@@ -38,10 +38,11 @@
     pasta: {name: 'Špagety', art: 'spaghetti', base: ['pasta'], seconds: 12, finish: ['sauce'], limit: 150},
     soup: {name: 'Zeleninová polévka', art: 'soup', base: ['water', 'choppedVeg'], seconds: 15, finish: [], limit: 175},
     steak: {name: 'Steak', art: 'steak', base: ['beef'], seconds: 10, finish: ['spice'], limit: 150},
-    omelet: {name: 'Omeleta', art: 'omelet', base: ['egg', 'choppedHam', 'cheese'], seconds: 8, finish: [], limit: 185},
+    omelet: {name: 'Omeleta', art: 'omelet', base: ['choppedHam', 'egg', 'cheese'], seconds: 8, finish: [], limit: 185},
     risotto: {name: 'Kuřecí rizoto', art: 'risotto', base: ['rice', 'choppedChicken', 'veg'], seconds: 18, finish: [], limit: 210}
   };
   const queue = ['egg', 'pasta', 'steak', 'soup', 'egg', 'omelet', 'pasta', 'risotto', 'steak', 'soup'];
+  const readyGrace = 45;
   const pantry = ['pasta', 'sauce', 'water', 'spice', 'rice'];
   const fridge = ['egg', 'veg', 'beef', 'ham', 'cheese', 'chicken'];
   const burnerRows = [41.2, 45.5, 49.7, 54];
@@ -87,17 +88,28 @@
     return {element, image, time};
   }
 
-  const stoveViews = burnerRows.map(y => effect(9.35, y));
+  const stoveViews = burnerRows.map(y => {
+    const pan = document.createElement('img');
+    pan.className = 'burner-pan';
+    pan.src = asset('pan');
+    pan.alt = '';
+    place(pan, 9.35, y);
+    find('.kitchen-effects').append(pan);
+    const view = effect(9.35, y);
+    view.element.classList.add('stove-item');
+    return view;
+  });
   const burnerButtons = burnerRows.map((_, index) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.setAttribute('aria-label', `Plotýnka ${index + 1}`);
+    const itemId = `burner-item-${index + 1}`;
     const statusId = `burner-status-${index + 1}`;
-    button.setAttribute('aria-describedby', statusId);
-    button.innerHTML = `<span class="burner-number">${index + 1}</span><span class="burner-status" id="${statusId}"></span>`;
+    button.setAttribute('aria-describedby', `${itemId} ${statusId}`);
+    button.innerHTML = `<span class="burner-number">${index + 1}</span><span class="burner-item" id="${itemId}"></span><span class="burner-status" id="${statusId}"></span>`;
     button.addEventListener('click', () => selectBurner(index));
     burnerControls.append(button);
-    return {button, status: button.lastElementChild};
+    return {button, item: button.querySelector('.burner-item'), status: button.lastElementChild};
   });
   const plateViews = counters.map(station => effect(87.3, station.y));
   const boardView = effect(46, 45.3);
@@ -110,9 +122,48 @@
   let lastAction;
   let entranceTimer;
 
-  // Safari can dispatch native menu and pinch events in addition to pointer events.
-  for (const type of ['contextmenu', 'gesturestart', 'gesturechange']) {
-    game.addEventListener(type, event => event.preventDefault(), {passive: false});
+  const viewport = window.visualViewport;
+  const isZoomed = () => (viewport?.scale ?? 1) > 1.015;
+  function syncZoom() { game.classList.toggle('is-zoomed', isZoomed()); }
+  viewport?.addEventListener('resize', syncZoom);
+  syncZoom();
+
+  for (const surface of [game, panel]) {
+    const taps = new Map();
+    surface.addEventListener('touchstart', event => {
+      for (const touch of event.changedTouches) {
+        const button = touch.target.closest?.('button');
+        taps.set(touch.identifier, {button, x: touch.clientX, y: touch.clientY});
+      }
+    }, {passive: true});
+    surface.addEventListener('touchmove', event => {
+      for (const touch of event.changedTouches) {
+        const tap = taps.get(touch.identifier);
+        if (tap && Math.hypot(touch.clientX - tap.x, touch.clientY - tap.y) > 12) taps.delete(touch.identifier);
+      }
+    }, {passive: true});
+    surface.addEventListener('touchend', event => {
+      for (const touch of event.changedTouches) {
+        const tap = taps.get(touch.identifier);
+        taps.delete(touch.identifier);
+        if (!tap || !event.cancelable || isZoomed()) continue;
+        // Handle the tap once while suppressing Safari's synthesized tap and double-tap zoom.
+        event.preventDefault();
+        if (tap.button && !tap.button.disabled && tap.button.contains(document.elementFromPoint(touch.clientX, touch.clientY))) {
+          tap.button.click();
+        }
+      }
+    }, {passive: false});
+    surface.addEventListener('touchcancel', event => {
+      for (const touch of event.changedTouches) taps.delete(touch.identifier);
+    }, {passive: true});
+    surface.addEventListener('contextmenu', event => event.preventDefault());
+    for (const type of ['gesturestart', 'gesturechange']) {
+      surface.addEventListener(type, event => {
+        // If the browser was already zoomed, allow the player to pinch back out.
+        if (!isZoomed()) event.preventDefault();
+      }, {passive: false});
+    }
   }
 
   function item(kind) { return {kind}; }
@@ -186,7 +237,7 @@
     for (const step of [
       ...prep.map(kind => `Na prkénku nakrájej ${prepNames[kind]} a pak surovinu zvedni.`),
       `Na volnou plotýnku polož v tomto pořadí: ${recipe.base.map(kind => ingredients[kind][0].toLowerCase()).join(' → ')}.`,
-      `Stiskni Vařit. Po ${recipe.seconds} s jídlo zvedni.`,
+      `Po vložení poslední suroviny se spustí vaření. Po ${recipe.seconds} s jídlo zvedni.`,
       ...recipe.finish.map(kind => `Polož jídlo na kompletační pult a přidej: ${ingredients[kind][0].toLowerCase()}. Pak ho zvedni.`),
       'Hotové jídlo polož do výdejního okénka.'
     ]) {
@@ -208,7 +259,8 @@
     button.addEventListener('click', () => viewRecipe(key));
     wrapper.append(button);
     tickets.append(wrapper);
-    return {key, until: state.time + recipe.limit, wrapper, time: button.querySelector('.order-time'), fill: button.querySelector('.progress span')};
+    const duration = recipe.limit * 1.5;
+    return {key, duration, until: state.time + duration, wrapper, time: button.querySelector('.order-time'), fill: button.querySelector('.progress span')};
   }
   function refill() {
     const count = state.completed === 0 ? 1 : 3;
@@ -249,7 +301,7 @@
         const option = panelButton(name, () => {
           panel.close();
           moveItem(item(kind), 'take', 'pickup');
-          const advice = chopped[kind] ? 'Prkénko je uprostřed kuchyně.' : kind === 'egg' ? 'Polož ho na plotýnku a stiskni Vařit.' : 'Postup najdeš klepnutím na objednávku.';
+          const advice = chopped[kind] ? 'Prkénko je uprostřed kuchyně.' : kind === 'egg' ? 'Polož ho na pánev. U smaženého vejce se vaření spustí hned.' : 'Postup najdeš klepnutím na objednávku.';
           say(name, advice);
           refresh();
         });
@@ -274,7 +326,7 @@
     }
     if (!state.held || !chopped[state.held.kind]) return ['Krájet', 'knife'];
     return ['Krájet', 'knife', () => {
-      state.chopping = {food: item(chopped[state.held.kind]), until: state.time + 1.4};
+      state.chopping = {raw: state.held, food: item(chopped[state.held.kind]), until: state.time + 1.4};
       moveItem(null, 'chop', 'chop');
       say('Prkénko', 'Jakmile je zelený ukazatel plný, surovinu můžeš zvednout.');
     }];
@@ -284,7 +336,7 @@
     const burner = state.burners[index];
     if (burner.key) {
       if (burner.until > state.time) return ['Vaří se…', recipes[burner.key].art];
-      const burned = state.time >= burner.until + 21;
+      const burned = state.time >= burner.until + readyGrace;
       if (state.held) return ['Odlož', burned ? 'burned' : recipes[burner.key].art];
       return ['Zvednout', burned ? 'burned' : recipes[burner.key].art, () => {
         const food = {...dish(burner.key), burned};
@@ -297,21 +349,18 @@
       const part = state.held.kind;
       return ['Položit', picture(state.held), () => {
         const parts = [...burner.parts, part];
-        if (!matchingRecipes(parts).length) return invalid('Tahle surovina sem teď nepatří. Zkontroluj pořadí v receptu.');
-        burner.parts = parts;
+        const matches = matchingRecipes(parts);
+        if (!matches.length) return invalid('Tahle surovina sem teď nepatří. Zkontroluj pořadí v receptu.');
         moveItem(null, 'put', 'put');
-        const ready = matchingRecipes(parts).some(([, recipe]) => recipe.base.length === parts.length);
-        say(`Plotýnka ${index + 1}`, ready ? 'Stiskni Vařit, nebo přidej další surovinu podle receptu.' : 'Přines další surovinu podle receptu.');
-      }];
-    }
-    const result = matchingRecipes(burner.parts).find(([, recipe]) => recipe.base.length === burner.parts.length);
-    if (result) {
-      const [key, recipe] = result;
-      return ['Vařit', recipe.art, () => {
-        state.burners[index] = {key, until: state.time + recipe.seconds, notified: false};
-        state.gesture = {time: state.time, gesture: 'put'};
-        say(`Plotýnka ${index + 1}`, `${recipe.name} se vaří. Mezitím můžeš připravit další objednávku.`);
-        sound('put');
+        const ready = matches.find(([, recipe]) => recipe.base.length === parts.length);
+        if (ready) {
+          const [key, recipe] = ready;
+          state.burners[index] = {key, until: state.time + recipe.seconds, notified: false};
+          say(`Plotýnka ${index + 1}`, `${recipe.name} se vaří. Mezitím můžeš připravit další objednávku.`);
+        } else {
+          burner.parts = parts;
+          say(`Plotýnka ${index + 1}`, 'Přines další surovinu podle receptu.');
+        }
       }];
     }
     if (!burner.parts.length) return ['Položit', 'cloche'];
@@ -456,19 +505,20 @@
     view.element.hidden = !food && !text;
     if (view.element.dataset.mode !== mode) view.element.dataset.mode = mode;
   }
-  function showBurnerStatus(index, text, mode = '') {
-    const {button, status} = burnerButtons[index];
+  function showBurnerStatus(index, name, text = '', mode = '') {
+    const {button, item, status} = burnerButtons[index];
+    if (item.textContent !== name) item.textContent = name;
     if (status.textContent !== text) status.textContent = text;
     if (button.dataset.mode !== mode) button.dataset.mode = mode;
   }
   function tickTimers() {
     for (const order of state.orders) {
       if (state.time >= order.until) {
-        order.until = state.time + recipes[order.key].limit;
+        order.until = state.time + order.duration;
         say('Objednávka', 'Čas vypršel. Objednávka se obnovila.');
       }
       const seconds = order.until - state.time;
-      const percent = seconds / recipes[order.key].limit;
+      const percent = seconds / order.duration;
       const timer = timeText(seconds);
       if (order.time.textContent !== timer) order.time.textContent = timer;
       order.fill.style.width = `${percent * 100}%`;
@@ -478,20 +528,20 @@
       if (!burner.key) {
         const latest = burner.parts[burner.parts.length - 1];
         showWork(stoveViews[index], latest ? item(latest) : null, '');
-        showBurnerStatus(index, latest ? 'Suroviny' : 'Volná');
+        showBurnerStatus(index, latest ? ingredients[latest][0] : 'Volná', latest ? 'Čeká' : '');
         return;
       }
       const remaining = burner.until - state.time;
       if (remaining > 0) {
         const time = timeText(remaining);
         showWork(stoveViews[index], dish(burner.key), time, 'cooking');
-        showBurnerStatus(index, time, 'cooking');
-      } else if (remaining <= -21) {
+        showBurnerStatus(index, recipes[burner.key].name, time, 'cooking');
+      } else if (remaining <= -readyGrace) {
         showWork(stoveViews[index], {...dish(burner.key), burned: true}, '', 'burned');
-        showBurnerStatus(index, 'Připáleno', 'burned');
+        showBurnerStatus(index, recipes[burner.key].name, 'Připáleno', 'burned');
       } else {
         showWork(stoveViews[index], dish(burner.key), 'Hotovo', 'ready');
-        showBurnerStatus(index, 'Hotovo', 'ready');
+        showBurnerStatus(index, recipes[burner.key].name, 'Hotovo', 'ready');
         if (!burner.notified) {
           burner.notified = true;
           sound('ready');
@@ -501,7 +551,7 @@
     state.plates.forEach((food, index) => showWork(plateViews[index], food, ''));
     const work = state.chopping;
     const cut = work ? Math.min(100, Math.round((1 - (work.until - state.time) / 1.4) * 100)) : 0;
-    showWork(boardView, work?.food, work ? `${cut} %` : '', work ? 'ready' : '');
+    showWork(boardView, work && (state.time < work.until ? work.raw : work.food), work ? `${cut} %` : '', work ? 'ready' : '');
   }
 
   function useAction() {
@@ -557,7 +607,7 @@
     if (captured !== undefined && stick.hasPointerCapture(captured)) stick.releasePointerCapture(captured);
   }
   stick.addEventListener('pointerdown', event => {
-    if (pointer !== undefined || event.button !== 0) return;
+    if (pointer !== undefined || event.button !== 0 || isZoomed()) return;
     pointer = event.pointerId;
     stick.setPointerCapture(pointer);
     slide(event);

@@ -178,6 +178,8 @@ h1 span {
   box-shadow: 0 2px 6px #0009, inset 0 0 0 3px #0e130e;
 }
 
+.game.is-zoomed :is(.kitchen, .stick) { touch-action: manipulation; }
+
 .kitchen::after {
   content: '';
   z-index: 1;
@@ -279,6 +281,18 @@ h1 span {
 .work-item[data-mode="ready"] span { background: #2d4636f2; border-color: #86a879; }
 .work-item[data-mode="burned"] img { filter: drop-shadow(0 0 4px #ba302b); }
 
+.burner-pan {
+  position: absolute;
+  z-index: 1;
+  width: 43px;
+  height: 29px;
+  transform: translate(-37.5%, -50%);
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.stove-item img { width: 22px; height: 22px; margin: 1px 0 0 4px; }
+
 .burner-focus {
   position: absolute;
   z-index: 1;
@@ -294,12 +308,13 @@ h1 span {
 .burner-controls {
   position: absolute;
   z-index: 4;
-  inset-inline: 12px;
+  right: 12px;
   bottom: calc(var(--stick-size) + 26px);
+  width: min(212px, calc(100% - 24px));
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 7px;
-  padding: 5px;
+  gap: 4px;
+  padding: 4px;
   border: 1px solid #aa8551;
   border-radius: 6px;
   background: #1d2b24f2;
@@ -307,11 +322,12 @@ h1 span {
 }
 
 .burner-controls button {
-  min-height: 52px;
+  min-height: 50px;
   display: grid;
-  align-content: center;
-  gap: 3px;
-  padding: 3px 2px;
+  grid-template-rows: 12px 1fr 10px;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 0;
   border: 1px solid #a98c5a;
   border-radius: 4px;
   background: #344136;
@@ -320,8 +336,9 @@ h1 span {
   -webkit-tap-highlight-color: transparent;
 }
 
-.burner-number { font: 700 19px/1 var(--display); }
-.burner-status { font: 700 12px/1 var(--label); font-variant-numeric: tabular-nums; }
+.burner-number { font: 700 13px/1 var(--display); }
+.burner-item { font: 700 10px/1.06 var(--label); overflow-wrap: anywhere; }
+.burner-status { font: 700 10px/1 var(--label); font-variant-numeric: tabular-nums; }
 .burner-controls [data-mode="cooking"] .burner-status { color: #ffcc80; }
 .burner-controls [data-mode="ready"] .burner-status { color: #bde5b3; }
 .burner-controls [data-mode="burned"] .burner-status { color: #ffaf9c; }
@@ -414,7 +431,7 @@ h1 span {
   image-rendering: pixelated;
 }
 
-.action:disabled { opacity: .46; cursor: default; }
+.action:disabled { opacity: .46; pointer-events: none; }
 
 .status {
   display: flex;
