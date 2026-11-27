@@ -3,11 +3,14 @@
 
   const find = selector => document.querySelector(selector);
   const asset = name => `art/${name}.png`;
+  const game = find('.game');
   const board = find('.kitchen');
   const actor = find('.actor');
   const sprite = find('.player-sprite');
   const heldImage = find('.held');
   const stationLabel = find('.station');
+  const burnerControls = find('.burner-controls');
+  const burnerFocus = find('.burner-focus');
   const action = find('.action');
   const actionLabel = find('.action-label');
   const actionGlyph = find('.action-glyph');
@@ -41,7 +44,8 @@
   const queue = ['egg', 'pasta', 'steak', 'soup', 'egg', 'omelet', 'pasta', 'risotto', 'steak', 'soup'];
   const pantry = ['pasta', 'sauce', 'water', 'spice', 'rice'];
   const fridge = ['egg', 'veg', 'beef', 'ham', 'cheese', 'chicken'];
-  const burners = [41.2, 45.5, 49.7, 54].map((y, index) => ({type: 'burner', index, name: `Plotýnka ${index + 1}`, x: 20.3, y, label: [10, 65.9]}));
+  const burnerRows = [41.2, 45.5, 49.7, 54];
+  const stove = {type: 'stove', name: 'Sporák', x: 20.3, label: [10, 31]};
   const counters = [39.4, 46.1, 52.5].map((y, index) => ({type: 'plate', index, name: 'Kompletační pult', x: 76.6, y, label: [84, 58.7]}));
   const stations = [
     {type: 'stock', name: 'Špajz', items: pantry, x: 25, y: 32.9, label: [25, 27]},
@@ -51,7 +55,7 @@
     {type: 'chop', name: 'Prkénko', x: 48, y: 64.5, label: [48, 57.8]},
     {type: 'trash', name: 'Koš', x: 16, y: 75.5, label: [10, 69.4]},
     {type: 'finish', name: 'Výtah', x: 50, y: 74.8, label: [50, 81.2]},
-    ...burners, ...counters
+    stove, ...counters
   ];
   const obstacles = [[2, 15.5, 29, 66.6], [34.4, 62, 40.2, 61.8], [80.2, 96.7, 32, 67.5], [4, 14.1, 71.3, 80.2], [29.8, 70, 77.1, 90]];
   const directionNames = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
@@ -83,7 +87,18 @@
     return {element, image, time};
   }
 
-  const stoveViews = burners.map(station => effect(9.35, station.y));
+  const stoveViews = burnerRows.map(y => effect(9.35, y));
+  const burnerButtons = burnerRows.map((_, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.setAttribute('aria-label', `Plotýnka ${index + 1}`);
+    const statusId = `burner-status-${index + 1}`;
+    button.setAttribute('aria-describedby', statusId);
+    button.innerHTML = `<span class="burner-number">${index + 1}</span><span class="burner-status" id="${statusId}"></span>`;
+    button.addEventListener('click', () => selectBurner(index));
+    burnerControls.append(button);
+    return {button, status: button.lastElementChild};
+  });
   const plateViews = counters.map(station => effect(87.3, station.y));
   const boardView = effect(46, 45.3);
   const keys = new Set();
@@ -94,6 +109,11 @@
   let lastTime;
   let lastAction;
   let entranceTimer;
+
+  // Safari can dispatch native menu and pinch events in addition to pointer events.
+  for (const type of ['contextmenu', 'gesturestart', 'gesturechange']) {
+    game.addEventListener(type, event => event.preventDefault(), {passive: false});
+  }
 
   function item(kind) { return {kind}; }
   function dish(key, count = 0) { return {key, count}; }
@@ -357,7 +377,7 @@
     if (!station) return ['Akce', 'cloche'];
     if (station.type === 'stock') return stockAction(station);
     if (station.type === 'chop') return chopAction();
-    if (station.type === 'burner') return burnerAction(station.index);
+    if (station === stove) return burnerAction(state.selectedBurner);
     if (station.type === 'plate') return plateAction(station.index);
     if (station.type === 'serve') return ['Položit', state.held ? picture(state.held) : 'cloche', state.held && serve];
     if (station.type === 'trash') return ['Vyhodit', 'burned', state.held && (() => {
@@ -371,10 +391,11 @@
 
   function nearest() {
     let best = null;
-    let shortest = 34;
+    let shortest = Infinity;
     for (const station of stations) {
-      const distance = Math.hypot((state.x - station.x) * board.clientWidth / 100, (state.y - station.y) * board.clientHeight / 100);
-      const reach = station.type === 'burner' || station.type === 'plate' ? 25 : 34;
+      const y = station === stove ? Math.min(58, Math.max(38, state.y)) : station.y;
+      const distance = Math.hypot((state.x - station.x) * board.clientWidth / 100, (state.y - y) * board.clientHeight / 100);
+      const reach = station === stove ? 46 : station.type === 'plate' ? 25 : 34;
       if (distance < shortest && distance < reach) {
         shortest = distance;
         best = station;
@@ -383,11 +404,24 @@
     return best;
   }
 
+  function markBurner() {
+    burnerButtons.forEach(({button}, index) => button.setAttribute('aria-pressed', String(index === state.selectedBurner)));
+    place(burnerFocus, 9.35, burnerRows[state.selectedBurner]);
+  }
+
+  function selectBurner(index) {
+    if (nearest() !== stove) return;
+    state.selectedBurner = index;
+    markBurner();
+    refresh();
+  }
+
   function refresh() {
     const station = nearest();
     if (station !== nearby) {
       nearby = station;
       stationLabel.hidden = !station;
+      burnerControls.hidden = burnerFocus.hidden = station !== stove;
       if (station) {
         place(stationLabel, ...station.label);
         stationLabel.textContent = station.name;
@@ -422,6 +456,11 @@
     view.element.hidden = !food && !text;
     if (view.element.dataset.mode !== mode) view.element.dataset.mode = mode;
   }
+  function showBurnerStatus(index, text, mode = '') {
+    const {button, status} = burnerButtons[index];
+    if (status.textContent !== text) status.textContent = text;
+    if (button.dataset.mode !== mode) button.dataset.mode = mode;
+  }
   function tickTimers() {
     for (const order of state.orders) {
       if (state.time >= order.until) {
@@ -439,15 +478,20 @@
       if (!burner.key) {
         const latest = burner.parts[burner.parts.length - 1];
         showWork(stoveViews[index], latest ? item(latest) : null, '');
+        showBurnerStatus(index, latest ? 'Suroviny' : 'Volná');
         return;
       }
       const remaining = burner.until - state.time;
       if (remaining > 0) {
-        showWork(stoveViews[index], dish(burner.key), timeText(remaining), 'cooking');
+        const time = timeText(remaining);
+        showWork(stoveViews[index], dish(burner.key), time, 'cooking');
+        showBurnerStatus(index, time, 'cooking');
       } else if (remaining <= -21) {
         showWork(stoveViews[index], {...dish(burner.key), burned: true}, '', 'burned');
+        showBurnerStatus(index, 'Připáleno', 'burned');
       } else {
         showWork(stoveViews[index], dish(burner.key), 'Hotovo', 'ready');
+        showBurnerStatus(index, 'Hotovo', 'ready');
         if (!burner.notified) {
           burner.notified = true;
           sound('ready');
@@ -475,7 +519,7 @@
 
   function nearestAngle(dx, dy) { return (Math.round(Math.atan2(dx, -dy) / turn) + 8) % 8; }
   function closestDirection(station) {
-    if (station.type === 'burner') return 6;
+    if (station === stove) return 6;
     if (station.type === 'plate') return 2;
     if (station.type === 'chop') return state.y < 50 ? 4 : 0;
     if (station.type === 'trash') return 6;
@@ -529,6 +573,8 @@
     if (walkKeys.includes(key)) {
       event.preventDefault();
       keys.add(key);
+    } else if (/^[1-4]$/.test(key) && !event.repeat) {
+      selectBurner(Number(key) - 1);
     } else if (key === 'e' && !event.repeat) {
       useAction();
     }
@@ -598,7 +644,8 @@
     clearTimeout(entranceTimer);
     tickets.replaceChildren();
     state = {x: 50, y: 73.4, facing: 0, held: null, gesture: null, chopping: null, time: 0, started: false,
-      completed: 0, next: 0, orders: [], burners: burners.map(() => ({parts: []})), plates: counters.map(() => null), reward: false};
+      completed: 0, next: 0, orders: [], selectedBurner: 0, burners: burnerRows.map(() => ({parts: []})), plates: counters.map(() => null), reward: false};
+    markBurner();
     refill();
     drawCourier(-1, 0);
     tickTimers();
