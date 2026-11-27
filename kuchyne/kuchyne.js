@@ -11,6 +11,9 @@
   const stationLabel = find('.station');
   const burnerControls = find('.burner-controls');
   const burnerFocus = find('.burner-focus');
+  const plateFocus = find('.plate-focus');
+  const guideTarget = find('.guide-target');
+  const cook = find('.cook');
   const action = find('.action');
   const actionLabel = find('.action-label');
   const actionGlyph = find('.action-glyph');
@@ -19,6 +22,7 @@
   const panel = find('#kitchen-panel');
   const panelTitle = find('#panel-title');
   const panelBody = find('.panel-body');
+  const panelClose = find('.panel-close');
   const stick = find('.stick');
   const menuToggle = find('#balik-menu-toggle');
   const soundToggle = find('#sound-toggle');
@@ -34,20 +38,20 @@
   const chopped = {veg: 'choppedVeg', ham: 'choppedHam', chicken: 'choppedChicken'};
   const prepNames = {choppedVeg: 'zeleninu', choppedHam: 'šunku', choppedChicken: 'kuřecí'};
   const recipes = {
-    egg: {name: 'Smažené vejce', art: 'fried-egg', base: ['egg'], seconds: 5, finish: [], limit: 110},
-    pasta: {name: 'Špagety', art: 'spaghetti', base: ['pasta'], seconds: 12, finish: ['sauce'], limit: 150},
-    soup: {name: 'Zeleninová polévka', art: 'soup', base: ['water', 'choppedVeg'], seconds: 15, finish: [], limit: 175},
+    egg: {name: 'Smažené vejce', art: 'fried-egg', base: ['egg'], seconds: 5, finish: []},
+    pasta: {name: 'Špagety', art: 'spaghetti', base: ['pasta'], seconds: 12, finish: ['sauce'], limit: 150, pot: true},
+    soup: {name: 'Zeleninová polévka', art: 'soup', base: ['water', 'choppedVeg'], seconds: 15, finish: [], limit: 175, pot: true},
     steak: {name: 'Steak', art: 'steak', base: ['beef'], seconds: 10, finish: ['spice'], limit: 150},
-    omelet: {name: 'Omeleta', art: 'omelet', base: ['choppedHam', 'egg', 'cheese'], seconds: 8, finish: [], limit: 185},
+    omelet: {name: 'Omeleta', art: 'omelet', base: ['egg', 'choppedHam', 'cheese'], seconds: 8, finish: [], limit: 185},
     risotto: {name: 'Kuřecí rizoto', art: 'risotto', base: ['rice', 'choppedChicken', 'veg'], seconds: 18, finish: [], limit: 210}
   };
-  const queue = ['egg', 'pasta', 'steak', 'soup', 'egg', 'omelet', 'pasta', 'risotto', 'steak', 'soup'];
+  const queue = ['egg', 'pasta', 'steak', 'soup', 'omelet', 'risotto'];
   const readyGrace = 45;
   const pantry = ['pasta', 'sauce', 'water', 'spice', 'rice'];
   const fridge = ['egg', 'veg', 'beef', 'ham', 'cheese', 'chicken'];
   const burnerRows = [41.2, 45.5, 49.7, 54];
   const stove = {type: 'stove', name: 'Sporák', x: 20.3, label: [10, 31]};
-  const counters = [39.4, 46.1, 52.5].map((y, index) => ({type: 'plate', index, name: 'Kompletační pult', x: 76.6, y, label: [84, 58.7]}));
+  const counters = [39.4, 46.1, 52.5].map((y, index) => ({type: 'plate', index, name: `Talíř ${index + 1}`, x: 76.6, y, label: [84, 58.7]}));
   const stations = [
     {type: 'stock', name: 'Špajz', items: pantry, x: 25, y: 32.9, label: [25, 27]},
     {type: 'stock', name: 'Lednice', items: fridge, x: 49.2, y: 33.4, label: [49.5, 12.4]},
@@ -97,7 +101,7 @@
     find('.kitchen-effects').append(pan);
     const view = effect(9.35, y);
     view.element.classList.add('stove-item');
-    return view;
+    return {...view, vessel: pan};
   });
   const burnerButtons = burnerRows.map((_, index) => {
     const button = document.createElement('button');
@@ -120,7 +124,7 @@
   let touchDirection = -1;
   let lastTime;
   let lastAction;
-  let entranceTimer;
+  let guideStep;
 
   const viewport = window.visualViewport;
   const isZoomed = () => (viewport?.scale ?? 1) > 1.015;
@@ -168,7 +172,12 @@
 
   function item(kind) { return {kind}; }
   function dish(key, count = 0) { return {key, count}; }
-  function picture(food) { return food.burned ? 'burned' : food.key ? recipes[food.key].art : ingredients[food.kind][1]; }
+  function picture(food) {
+    if (food.burned) return 'burned';
+    if (!food.key) return ingredients[food.kind][1];
+    const art = recipes[food.key].art;
+    return food.plated ? art : `${art}-cooking`;
+  }
   function nameOf(food) { return food.burned ? 'Připálené jídlo' : food.key ? recipes[food.key].name : ingredients[food.kind][0]; }
   function timeText(seconds) {
     const whole = Math.max(0, Math.ceil(seconds));
@@ -216,8 +225,9 @@
   document.addEventListener('keydown', unlockSound, true);
   balikSound.bindSpeaker(soundToggle);
 
-  function openPanel(title) {
+  function openPanel(title, closeLabel = 'Zavřít') {
     panelTitle.textContent = title;
+    panelClose.textContent = closeLabel;
     panelBody.replaceChildren();
     if (!panel.open) panel.showModal();
   }
@@ -229,6 +239,29 @@
     panelBody.append(button);
     return button;
   }
+
+  function openCoach() {
+    openPanel('Kuchtík', 'Jdeme vařit');
+    const text = document.createElement('p');
+    text.className = 'cook-intro';
+    const portrait = document.createElement('img');
+    portrait.src = asset('cook');
+    portrait.alt = '';
+    text.append(portrait, state.completed ? 'Jídlo dej na talíř a pak ho odnes do výdeje.' : 'Palcem táhni po levém ovladači. Šipka ti ukáže, kam jít.');
+    const steps = document.createElement('ol');
+    steps.className = 'cook-steps';
+    for (const [icon, label] of [['raw-egg', 'Vezmi vejce'], ['pan', 'Usmaž ho'], ['fried-egg', 'Dej na talíř'], ['cloche', 'Odnes do výdeje']]) {
+      const step = document.createElement('li');
+      const image = document.createElement('img');
+      image.src = asset(icon);
+      image.alt = '';
+      step.append(image, label);
+      steps.append(step);
+    }
+    panelBody.append(text, steps);
+  }
+  cook.addEventListener('click', openCoach);
+
   function viewRecipe(key) {
     const recipe = recipes[key];
     openPanel(recipe.name);
@@ -236,10 +269,11 @@
     const prep = recipe.base.filter(kind => prepNames[kind]);
     for (const step of [
       ...prep.map(kind => `Na prkénku nakrájej ${prepNames[kind]} a pak surovinu zvedni.`),
-      `Na volnou plotýnku polož v tomto pořadí: ${recipe.base.map(kind => ingredients[kind][0].toLowerCase()).join(' → ')}.`,
+      `Do ${recipe.pot ? 'hrnce' : 'pánve'} na volné plotýnce patří ${recipe.base.map(kind => ingredients[kind][0].toLowerCase()).join(' + ')}.`,
       `Po vložení poslední suroviny se spustí vaření. Po ${recipe.seconds} s jídlo zvedni.`,
-      ...recipe.finish.map(kind => `Polož jídlo na kompletační pult a přidej: ${ingredients[kind][0].toLowerCase()}. Pak ho zvedni.`),
-      'Hotové jídlo polož do výdejního okénka.'
+      'Polož jídlo na prázdný talíř na pultu vpravo.',
+      ...recipe.finish.map(kind => `K jídlu na talíři přidej ${kind === 'sauce' ? 'omáčku' : 'koření'}.`),
+      'Zvedni talíř a polož ho do výdejního okénka.'
     ]) {
       const li = document.createElement('li');
       li.textContent = step;
@@ -259,11 +293,11 @@
     button.addEventListener('click', () => viewRecipe(key));
     wrapper.append(button);
     tickets.append(wrapper);
-    const duration = recipe.limit * 1.5;
+    const duration = key === 'egg' ? 0 : recipe.limit * 1.5;
     return {key, duration, until: state.time + duration, wrapper, time: button.querySelector('.order-time'), fill: button.querySelector('.progress span')};
   }
   function refill() {
-    const count = state.completed === 0 ? 1 : 3;
+    const count = state.completed === 0 ? 1 : 2;
     while (state.orders.length < count && state.next < queue.length) {
       state.orders.push(openTicket(queue[state.next++]));
     }
@@ -280,10 +314,11 @@
     say('Kuchyně', message);
     sound('error');
   }
-  function completeDish(food) { return food.key && !food.burned && food.count === recipes[food.key].finish.length; }
+  function completeDish(food) { return food.plated && !food.burned && food.count === recipes[food.key].finish.length; }
   function matchingRecipes(parts) {
-    return Object.entries(recipes).filter(([, recipe]) =>
-      parts.length <= recipe.base.length && parts.every((kind, index) => recipe.base[index] === kind));
+    if (new Set(parts).size !== parts.length) return [];
+    return state.orders.map(({key}) => [key, recipes[key]])
+      .filter(([, recipe]) => parts.every(kind => recipe.base.includes(kind)));
   }
 
   function stockAction(station) {
@@ -301,7 +336,7 @@
         const option = panelButton(name, () => {
           panel.close();
           moveItem(item(kind), 'take', 'pickup');
-          const advice = chopped[kind] ? 'Prkénko je uprostřed kuchyně.' : kind === 'egg' ? 'Polož ho na pánev. U smaženého vejce se vaření spustí hned.' : 'Postup najdeš klepnutím na objednávku.';
+          const advice = chopped[kind] ? 'Prkénko je uprostřed kuchyně.' : 'Postup najdeš klepnutím na objednávku.';
           say(name, advice);
           refresh();
         });
@@ -335,14 +370,13 @@
   function burnerAction(index) {
     const burner = state.burners[index];
     if (burner.key) {
-      if (burner.until > state.time) return ['Vaří se…', recipes[burner.key].art];
-      const burned = state.time >= burner.until + readyGrace;
-      if (state.held) return ['Odlož', burned ? 'burned' : recipes[burner.key].art];
-      return ['Zvednout', burned ? 'burned' : recipes[burner.key].art, () => {
-        const food = {...dish(burner.key), burned};
+      const food = {...dish(burner.key), burned: state.completed > 0 && state.time >= burner.until + readyGrace};
+      if (burner.until > state.time) return ['Vaří se…', picture(food)];
+      if (state.held) return ['Odlož', picture(food)];
+      return ['Zvednout', picture(food), () => {
         state.burners[index] = {parts: []};
         moveItem(food, 'take', 'pickup');
-        say('V ruce', burned ? 'Připálené jídlo. Vyhoď ho do koše.' : recipes[food.key].finish.length ? `${nameOf(food)} patří na kompletační pult.` : `${nameOf(food)} můžeš odnést do výdeje.`);
+        say('V ruce', food.burned ? 'Připálené jídlo. Vyhoď ho do koše.' : `${nameOf(food)} polož na prázdný talíř na pultu vpravo.`);
       }];
     }
     if (state.held) {
@@ -350,7 +384,7 @@
       return ['Položit', picture(state.held), () => {
         const parts = [...burner.parts, part];
         const matches = matchingRecipes(parts);
-        if (!matches.length) return invalid('Tahle surovina sem teď nepatří. Zkontroluj pořadí v receptu.');
+        if (!matches.length) return invalid('Tahle surovina se sem nehodí. Klepnutím na objednávku otevřeš recept.');
         moveItem(null, 'put', 'put');
         const ready = matches.find(([, recipe]) => recipe.base.length === parts.length);
         if (ready) {
@@ -359,11 +393,13 @@
           say(`Plotýnka ${index + 1}`, `${recipe.name} se vaří. Mezitím můžeš připravit další objednávku.`);
         } else {
           burner.parts = parts;
-          say(`Plotýnka ${index + 1}`, 'Přines další surovinu podle receptu.');
+          burner.pot = matches.every(([, recipe]) => recipe.pot);
+          const missing = matches[0][1].base.filter(kind => !parts.includes(kind));
+          say(`Plotýnka ${index + 1}`, `Ještě chybí ${missing.map(kind => ingredients[kind][0].toLowerCase()).join(' + ')}.`);
         }
       }];
     }
-    if (!burner.parts.length) return ['Položit', 'cloche'];
+    if (!burner.parts.length) return ['Položit', 'pan'];
     return ['Zvednout', picture(item(burner.parts[burner.parts.length - 1])), () => {
       const food = item(burner.parts.pop());
       moveItem(food, 'take', 'pickup');
@@ -373,12 +409,12 @@
 
   function plateAction(index) {
     const plate = state.plates[index];
-    if (!plate && state.held?.key && !state.held.burned) return ['Položit', picture(state.held), () => {
+    if (!plate && state.held?.key && !state.held.burned) return [state.held.plated ? 'Odložit' : 'Na talíř', recipes[state.held.key].art, () => {
       const food = state.held;
-      state.plates[index] = food;
+      state.plates[index] = {...food, plated: true};
       moveItem(null, 'put', 'put');
       const next = recipes[food.key].finish[food.count];
-      say('Kompletace', next ? `Přines: ${ingredients[next][0].toLowerCase()}.` : 'Jídlo je hotové. Zvedni ho a odnes do výdeje.');
+      say('Talíř', next ? `Ještě chybí ${ingredients[next][0].toLowerCase()}.` : 'Zvedni talíř a odnes ho do výdeje.');
     }];
     if (plate && !state.held) return ['Zvednout', picture(plate), () => {
       state.plates[index] = null;
@@ -391,7 +427,7 @@
       moveItem(null, 'put', 'put');
       say('Kompletace', 'Jídlo je hotové. Zvedni ho a odnes do výdeje.');
     }];
-    return ['Položit', 'cloche'];
+    return ['Na talíř', 'cloche'];
   }
 
   function award() {
@@ -410,6 +446,7 @@
 
   function serve() {
     const food = state.held;
+    if (food.key && !food.burned && !food.plated) return invalid('Nejdřív polož jídlo na talíř na pultu vpravo.');
     if (!completeDish(food)) return invalid('Tohle ještě není hotové jídlo.');
     const index = state.orders.findIndex(order => order.key === food.key);
     if (index < 0) return invalid('Tohle jídlo teď nemá žádnou objednávku.');
@@ -417,7 +454,7 @@
     state.orders.splice(index, 1);
     state.completed++;
     moveItem(null, 'put', 'serve');
-    say('Výdej', `${nameOf(food)} vydáno.`);
+    say('Výdej', state.completed === 1 ? 'První jídlo je venku! Klepnutím na objednávku otevřeš další recept.' : `${nameOf(food)} vydáno.`);
     refill();
     if (state.completed === queue.length) award();
   }
@@ -443,7 +480,9 @@
     let shortest = Infinity;
     for (const station of stations) {
       const y = station === stove ? Math.min(58, Math.max(38, state.y)) : station.y;
-      const distance = Math.hypot((state.x - station.x) * board.clientWidth / 100, (state.y - y) * board.clientHeight / 100);
+      // The actor's position is at their feet. Align plate interactions with their hands.
+      const dy = (state.y - y) * board.clientHeight / 100 - (station.type === 'plate' ? 24 : 0);
+      const distance = Math.hypot((state.x - station.x) * board.clientWidth / 100, dy);
       const reach = station === stove ? 46 : station.type === 'plate' ? 25 : 34;
       if (distance < shortest && distance < reach) {
         shortest = distance;
@@ -465,12 +504,40 @@
     refresh();
   }
 
+  function updateGuide() {
+    guideTarget.hidden = state.completed > 0;
+    if (state.completed > 0) return;
+    const held = state.held;
+    const plated = state.plates.findIndex(food => food?.key === 'egg');
+    const inPan = state.burners.findIndex(burner => burner.key === 'egg');
+    let step, hint, x, y;
+    if (held?.key === 'egg') {
+      if (held.plated) [step, hint, x, y] = ['serve', 'Odnes talíř k výdeji nahoře vpravo.', 77.4, 23.5];
+      else [step, hint, x, y] = ['plate', 'Polož vejce na volný talíř vpravo.', 87.3, counters[0].y - 3.6];
+    } else if (plated >= 0) {
+      [step, hint, x, y] = ['pickup', 'Zvedni talíř s vejcem.', 87.3, counters[plated].y - 3.6];
+    } else if (inPan >= 0) {
+      const ready = state.burners[inPan].until <= state.time;
+      [step, hint, x, y] = [ready ? 'ready' : 'cooking', ready ? 'Vejce je hotové. Zvedni ho z pánve.' : 'Vejce se smaží. Počkej, až se ukáže Hotovo.', 5, burnerRows[inPan]];
+    } else if (held?.kind === 'egg') {
+      [step, hint, x, y] = ['stove', 'Dojdi ke sporáku vlevo a polož vejce na pánev.', 9.3, 38.2];
+    } else {
+      [step, hint, x, y] = ['fridge', 'Dojdi k lednici nahoře a zvedni vejce.', 49.5, 30.7];
+    }
+    if (step === guideStep) return;
+    guideStep = step;
+    place(guideTarget, x, y);
+    say('Kuchtík', hint);
+  }
+
   function refresh() {
     const station = nearest();
     if (station !== nearby) {
       nearby = station;
       stationLabel.hidden = !station;
       burnerControls.hidden = burnerFocus.hidden = station !== stove;
+      plateFocus.hidden = station?.type !== 'plate';
+      if (station?.type === 'plate') place(plateFocus, 87.3, station.y);
       if (station) {
         place(stationLabel, ...station.label);
         stationLabel.textContent = station.name;
@@ -494,6 +561,7 @@
       heldImage.hidden = true;
       if (actor.getAttribute('aria-label') !== 'Kurýr s volnýma rukama') actor.setAttribute('aria-label', 'Kurýr s volnýma rukama');
     }
+    updateGuide();
   }
 
   function showWork(view, food, text, mode = '') {
@@ -513,6 +581,11 @@
   }
   function tickTimers() {
     for (const order of state.orders) {
+      if (!order.duration) {
+        if (order.time.textContent !== 'Zaučení') order.time.textContent = 'Zaučení';
+        order.fill.style.width = '100%';
+        continue;
+      }
       if (state.time >= order.until) {
         order.until = state.time + order.duration;
         say('Objednávka', 'Čas vypršel. Objednávka se obnovila.');
@@ -525,22 +598,27 @@
       order.wrapper.classList.toggle('is-urgent', percent < .35);
     }
     state.burners.forEach((burner, index) => {
+      const view = stoveViews[index];
+      const pot = burner.key ? recipes[burner.key].pot : burner.parts.length && burner.pot;
+      const vessel = asset(pot ? 'pot' : 'pan');
+      if (view.vessel.getAttribute('src') !== vessel) view.vessel.src = vessel;
+      view.vessel.classList.toggle('is-pot', Boolean(pot));
       if (!burner.key) {
         const latest = burner.parts[burner.parts.length - 1];
-        showWork(stoveViews[index], latest ? item(latest) : null, '');
+        showWork(view, latest ? item(latest) : null, '');
         showBurnerStatus(index, latest ? ingredients[latest][0] : 'Volná', latest ? 'Čeká' : '');
         return;
       }
       const remaining = burner.until - state.time;
       if (remaining > 0) {
         const time = timeText(remaining);
-        showWork(stoveViews[index], dish(burner.key), time, 'cooking');
+        showWork(view, dish(burner.key), time, 'cooking');
         showBurnerStatus(index, recipes[burner.key].name, time, 'cooking');
-      } else if (remaining <= -readyGrace) {
-        showWork(stoveViews[index], {...dish(burner.key), burned: true}, '', 'burned');
+      } else if (state.completed > 0 && remaining <= -readyGrace) {
+        showWork(view, {...dish(burner.key), burned: true}, '', 'burned');
         showBurnerStatus(index, recipes[burner.key].name, 'Připáleno', 'burned');
       } else {
-        showWork(stoveViews[index], dish(burner.key), 'Hotovo', 'ready');
+        showWork(view, dish(burner.key), 'Hotovo', 'ready');
         showBurnerStatus(index, recipes[burner.key].name, 'Hotovo', 'ready');
         if (!burner.notified) {
           burner.notified = true;
@@ -691,7 +769,7 @@
 
   function reset() {
     stopInput();
-    clearTimeout(entranceTimer);
+    guideStep = null;
     tickets.replaceChildren();
     state = {x: 50, y: 73.4, facing: 0, held: null, gesture: null, chopping: null, time: 0, started: false,
       completed: 0, next: 0, orders: [], selectedBurner: 0, burners: burnerRows.map(() => ({parts: []})), plates: counters.map(() => null), reward: false};
@@ -700,12 +778,7 @@
     drawCourier(-1, 0);
     tickTimers();
     refresh();
-    say('Kurýr', '„Dobře. Ale vařím naposledy.“');
-    entranceTimer = setTimeout(() => {
-      if (!state.held && state.completed === 0 && statusName.textContent === 'Kurýr') {
-        say('První objednávka', 'Vezmi vejce z lednice. Klepnutím na objednávku otevřeš recept.');
-      }
-    }, 3900);
+    openCoach();
   }
   find('#reset').addEventListener('click', reset);
   reset();
