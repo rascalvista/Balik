@@ -28,6 +28,7 @@ button { color: inherit; font: inherit; cursor: pointer; }
 
 .game, #kitchen-panel, #balik-menu {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
