@@ -18,4 +18,6 @@ Nahrávky v tabulce mají licenci [CC0 1.0](https://creativecommons.org/publicdo
 
 Kuchyňská skladba [Rendezvous](https://www.silvermansound.com/free-music/rendezvous) © 2016 Shane Ivers (Silverman Sound Studios, ISRC UKEZT1600065) je pod licencí [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). `kitchen-rendezvous.mp3` je výřez upravený pro plynulé opakování se ztlumenou hlasitostí.
 
+Titulní smyčka `title-rocknroll.mp3` je 8bitová úprava úvodního riffu [Rock’n’rollová modlitba](https://www.supraphonline.cz/album/175252-best-of/cd?trackId=2069588) od Ivana Hlase, v původní nahrávce v podání Jana Kalouska. Pro BALÍČEK byla nově syntetizována a použita se souhlasem k úpravě a použití ve hře.
+
 Bublání, smažení a výdejní zvonek jsou syntetizované pro hru. Hlasové zvuky dialogů generuje Web Audio přímo při hraní.
