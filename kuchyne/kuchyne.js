@@ -31,7 +31,6 @@
   const panelClose = find('.panel-close');
   const stick = find('.stick');
   const menuToggle = find('#balik-menu-toggle');
-  const soundToggle = find('#sound-toggle');
   const statusName = find('.status-name');
   const statusMessage = find('.status-message');
 
@@ -50,7 +49,7 @@
     soup: {name: 'Zeleninová polévka', art: 'soup', base: ['water', 'choppedVeg'], seconds: 15, finish: [], limit: 175, pot: true},
     steak: {name: 'Steak', art: 'steak', base: ['beef'], seconds: 10, finish: ['spice'], limit: 150},
     omelet: {name: 'Omeleta', art: 'omelet', base: ['egg', 'choppedHam', 'choppedCheese'], seconds: 8, finish: [], limit: 185},
-    risotto: {name: 'Kuřecí rizoto', art: 'risotto', base: ['rice', 'choppedChicken', 'veg'], seconds: 18, finish: [], limit: 210, pot: true}
+    risotto: {name: 'Kuřecí rizoto', art: 'risotto', base: ['rice', 'choppedChicken', 'veg'], substitutes: {choppedVeg: 'veg'}, seconds: 18, finish: [], limit: 210, pot: true}
   };
   const queue = ['egg', 'pasta', 'steak', 'soup', 'omelet', 'risotto'];
   const readyGrace = 45;
@@ -198,43 +197,11 @@
   function say(name, message) {
     statusName.textContent = name;
     statusMessage.textContent = message;
+    if (name === 'Kurýr') balikSound.speak(message, 'courier');
+    if (name === 'Kuchtík') balikSound.speak(message, 'cook');
   }
 
-  const SoundContext = window.AudioContext || window.webkitAudioContext;
-  let context;
-  let soundMixer;
-  const cuePatterns = {
-    pickup: [325, 494], put: [294], chop: [355, 250, 330],
-    ready: [494, 660, 880], serve: [440, 554, 660], error: [170, 149]
-  };
-  function sound(cue) {
-    if (!context || context.state !== 'running' || !balikSound.isPageActive()) return;
-    cuePatterns[cue].forEach((pitch, index) => {
-      const tone = context.createOscillator();
-      const gain = context.createGain();
-      const time = context.currentTime + index * .075;
-      tone.type = cue === 'chop' ? 'triangle' : 'sine';
-      tone.frequency.value = pitch;
-      gain.gain.setValueAtTime(.055, time);
-      gain.gain.exponentialRampToValueAtTime(.001, time + .09);
-      tone.connect(gain).connect(soundMixer.effects);
-      tone.onended = () => { tone.disconnect(); gain.disconnect(); };
-      tone.start(time);
-      tone.stop(time + .095);
-    });
-  }
-  function unlockSound() {
-    if (!SoundContext || !balikSound.isPageActive()) return;
-    if (!context) {
-      try { context = new SoundContext(); } catch { return; }
-      soundMixer = balikSound.createMixer(context);
-    }
-    if (context.state !== 'running') context.resume().catch(() => {});
-  }
-  document.addEventListener('pointerdown', unlockSound, true);
-  document.addEventListener('pointerup', unlockSound, true);
-  document.addEventListener('keydown', unlockSound, true);
-  balikSound.bindSpeaker(soundToggle);
+  const sound = kitchenAudio.cue;
 
   function openPanel(title, closeLabel = 'Zavřít') {
     panelTitle.textContent = title;
@@ -260,7 +227,9 @@
     const portrait = document.createElement('img');
     portrait.src = `${asset('cook')}?v=2`;
     portrait.alt = '';
-    text.append(portrait, canDemonstrate ? 'Ukážu ti, jak usmažit a vydat první vejce.' : 'Palcem táhni po levém ovladači. Šipka ti ukáže, kam jít.');
+    const line = canDemonstrate ? 'Ukážu ti, jak usmažit a vydat první vejce.' : 'Palcem táhni po levém ovladači. Šipka ti ukáže, kam jít.';
+    text.append(portrait, line);
+    balikSound.speak(line, 'cook');
     const steps = document.createElement('ol');
     steps.className = 'cook-steps';
     for (const [icon, label] of [['raw-egg', 'Vezmi vejce'], ['pan', 'Usmaž ho'], ['fried-egg', 'Dej na talíř'], ['cloche', 'Odnes do výdeje']]) {
@@ -343,9 +312,12 @@
     state.held = food;
     if (food?.key) setPreview(food.key);
     else if (food?.kind) {
-      const possible = state.orders.find(({key}) => recipes[key].base.includes(food.kind) ||
-        recipes[key].base.includes(chopped[food.kind]) || recipes[key].finish.includes(food.kind));
-      setPreview(possible?.key);
+      const possible = state.orders.filter(({key}) => {
+        const recipe = recipes[key];
+        const kind = recipe.substitutes?.[food.kind] ?? food.kind;
+        return recipe.base.includes(kind) || recipe.base.includes(chopped[kind]) || recipe.finish.includes(kind);
+      });
+      setPreview((possible.find(({key}) => key === preview.dataset.recipe) ?? possible[0])?.key);
     }
     state.gesture = {time: state.time, gesture};
     sound(cue);
@@ -356,9 +328,15 @@
   }
   function completeDish(food) { return food.plated && !food.burned && food.count === recipes[food.key].finish.length; }
   function matchingRecipes(parts) {
-    if (new Set(parts).size !== parts.length) return [];
-    return state.orders.map(({key}) => [key, recipes[key]])
-      .filter(([, recipe]) => parts.every(kind => recipe.base.includes(kind)));
+    const matches = [];
+    for (const {key} of state.orders) {
+      const recipe = recipes[key];
+      const missing = new Set(recipe.base);
+      if (parts.every(kind => missing.delete(recipe.substitutes?.[kind] ?? kind))) {
+        matches.push({key, recipe, missing: [...missing]});
+      }
+    }
+    return matches;
   }
 
   function stockAction(station) {
@@ -376,7 +354,10 @@
         const option = panelButton(name, () => {
           panel.close();
           moveItem(item(kind), 'take', 'pickup');
-          const advice = chopped[kind] ? 'Prkénko je uprostřed kuchyně.' : 'Postup najdeš klepnutím na objednávku.';
+          const recipe = recipes[preview.dataset.recipe];
+          const advice = kind === 'veg' && preview.dataset.recipe === 'risotto'
+            ? 'Zeleninu můžeš dát rovnou k rýži do hrnce.'
+            : recipe?.base.includes(chopped[kind]) ? 'Prkénko je uprostřed kuchyně.' : 'Postup najdeš klepnutím na objednávku.';
           say(name, advice);
           refresh();
         });
@@ -426,16 +407,16 @@
         const matches = matchingRecipes(parts);
         if (!matches.length) return invalid('Tahle surovina se sem nehodí. Klepnutím na objednávku otevřeš recept.');
         moveItem(null, 'put', 'put');
-        const ready = matches.find(([, recipe]) => recipe.base.length === parts.length);
-        setPreview((ready ?? matches[0])[0]);
+        const ready = matches.find(match => !match.missing.length);
+        setPreview((ready ?? matches[0]).key);
         if (ready) {
-          const [key, recipe] = ready;
+          const {key, recipe} = ready;
           state.burners[index] = {key, until: state.time + recipe.seconds, notified: false};
           say(`Plotýnka ${index + 1}`, `${recipe.name} se vaří. Mezitím můžeš připravit další objednávku.`);
         } else {
           burner.parts = parts;
-          burner.pot = matches.every(([, recipe]) => recipe.pot);
-          const missing = matches[0][1].base.filter(kind => !parts.includes(kind));
+          burner.pot = matches.every(({recipe}) => recipe.pot);
+          const {missing} = matches[0];
           say(`Plotýnka ${index + 1}`, `Ještě chybí ${missing.map(kind => ingredients[kind][0].toLowerCase()).join(' + ')}.`);
         }
       }];
@@ -527,7 +508,7 @@
     state.selectedBurner = index;
     const burner = state.burners[index];
     if (burner.key) setPreview(burner.key);
-    else if (burner.parts.length) setPreview(matchingRecipes(burner.parts)[0]?.[0]);
+    else if (burner.parts.length) setPreview(matchingRecipes(burner.parts)[0]?.key);
     markBurner();
     refresh();
   }
@@ -562,6 +543,17 @@
     const station = nearest();
     if (station !== nearby) {
       nearby = station;
+      if (station === stove && state.held?.kind) {
+        const accepts = burner => !burner.key && burner.parts.length &&
+          matchingRecipes([...burner.parts, state.held.kind]).length;
+        if (!accepts(state.burners[state.selectedBurner])) {
+          const compatible = state.burners.map((burner, index) => accepts(burner) ? index : -1).filter(index => index >= 0);
+          if (compatible.length === 1) {
+            state.selectedBurner = compatible[0];
+            markBurner();
+          }
+        }
+      }
       stationLabel.hidden = !station;
       burnerControls.hidden = burnerFocus.hidden = station !== stove;
       plateFocus.hidden = station?.type !== 'plate';
@@ -624,6 +616,8 @@
       order.fill.style.width = `${percent * 100}%`;
       order.wrapper.classList.toggle('is-urgent', percent < .35);
     }
+    let boiling = false;
+    let frying = false;
     state.burners.forEach((burner, index) => {
       const view = stoveViews[index];
       const pot = burner.key ? recipes[burner.key].pot : burner.parts.length && burner.pot;
@@ -639,6 +633,8 @@
       }
       const remaining = burner.until - state.time;
       if (remaining > 0) {
+        if (pot) boiling = true;
+        else frying = true;
         const time = timeText(remaining);
         showWork(view, dish(burner.key), time, 'cooking');
         showBurnerStatus(index, recipes[burner.key].name, time, 'cooking');
@@ -654,6 +650,7 @@
         }
       }
     });
+    kitchenAudio.setHeat(boiling, frying);
     state.plates.forEach((food, index) => showWork(plateViews[index], food, ''));
     const work = state.chopping;
     const cut = work ? Math.min(100, Math.round((1 - (work.until - state.time) / 1.4) * 100)) : 0;
@@ -802,6 +799,7 @@
     game.classList.toggle('is-sequence', Boolean(name));
     menuToggle.disabled = Boolean(name);
     if (name) {
+      kitchenAudio.setHeat(false, false);
       stationLabel.hidden = plateFocus.hidden = burnerControls.hidden = burnerFocus.hidden = guideTarget.hidden = true;
     }
     nearby = undefined;
@@ -865,8 +863,10 @@
     await runPath(cook, [[27, 35], [22, 43]], speed);
     holdForDemo();
     showWork(stoveViews[0], dish('egg'), 'Smaží se', 'cooking');
+    kitchenAudio.setHeat(false, true);
     sound('put');
     await pause(620);
+    kitchenAudio.setHeat(false, false);
     showWork(stoveViews[0], dish('egg'), 'Hotovo', 'ready');
     sound('ready');
     await pause(320);
@@ -927,7 +927,9 @@
   function update(timestamp) {
     const delta = lastTime === undefined ? 0 : Math.min(.05, (timestamp - lastTime) / 1000);
     lastTime = timestamp;
-    if (!state.scene && !state.reward && !document.hidden && !panel.open && !find('#balik-menu')?.open) {
+    const paused = document.hidden || panel.open || find('#balik-menu')?.open;
+    if (paused && !state.scene) kitchenAudio.setHeat(false, false);
+    if (!state.scene && !state.reward && !paused) {
       const direction = directionFromInput();
       if (state.started) state.time += delta;
       drawCourier(direction, delta);

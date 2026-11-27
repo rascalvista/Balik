@@ -22,6 +22,8 @@ const balikSound = (() => {
 
   let settings = read();
   let pageActive = true;
+  let dialogue;
+  let introLine;
 
   function subscribe(listener) {
     listeners.add(listener);
@@ -67,6 +69,108 @@ const balikSound = (() => {
     button.addEventListener('click', toggleMute);
   }
 
+  function speak(text, speaker = 'courier') {
+    const line = {text: text.trim(), speaker};
+    if (!line.text) return;
+    if (dialogue) dialogue(line);
+    else introLine = line;
+  }
+
+  function connectDialogue(context, output) {
+    const elements = document.querySelectorAll('[data-dialogue-voice]');
+    const pitches = {courier: 157, receptionist: 226, cook: 189};
+    const vowels = [[440, 1610], [530, 1150], [380, 2080], [700, 1250], [410, 840]];
+    const melody = [0, 3, 1, 5, 2, -1, 2, -2];
+    let voice;
+    let pending;
+    let spoken;
+    let spokenAt = -Infinity;
+
+    function stop() {
+      pending = null;
+      if (!voice) return;
+      voice.gain.gain.cancelScheduledValues(context.currentTime);
+      voice.gain.gain.setValueAtTime(0, context.currentTime);
+      voice.source.stop();
+      voice = null;
+    }
+
+    function play(line) {
+      if (!pageActive || document.hidden || settings.muted || settings.effects === 0) return;
+      if (context.state !== 'running') {
+        pending = line;
+        return;
+      }
+      if (spoken === line.text && context.currentTime - spokenAt < .3) return;
+      stop();
+      spoken = line.text;
+      spokenAt = context.currentTime;
+
+      // Short, voiced syllables with moving vowel resonances. The text only shapes the cadence.
+      const letters = line.text.match(/[\p{L}\d]/gu) ?? ['a'];
+      const count = Math.min(melody.length, Math.max(2, Math.ceil(letters.length / 6)));
+      const base = pitches[line.speaker] ?? pitches.courier;
+      const source = context.createOscillator();
+      const gain = context.createGain();
+      const bands = vowels[0].map(() => context.createBiquadFilter());
+      source.type = 'triangle';
+      bands.forEach((band, index) => {
+        band.type = 'bandpass';
+        band.Q.value = index ? 2 : 1.35;
+        source.connect(band).connect(gain);
+      });
+      gain.connect(output);
+      const now = context.currentTime + .018;
+      let at = now;
+      gain.gain.value = 0;
+      for (let index = 0; index < count; index++) {
+        const letter = letters[Math.floor(index * letters.length / count)].codePointAt(0);
+        const vowel = vowels[letter % vowels.length];
+        const duration = .065 + (letter % 4) * .011;
+        const pitch = base * 2 ** ((melody[index] + letter % 3 - 1) / 12);
+        source.frequency.setValueAtTime(pitch, at);
+        source.frequency.linearRampToValueAtTime(pitch * (index === count - 1 ? .84 : 1.04), at + duration);
+        bands.forEach((band, formant) => band.frequency.setValueAtTime(vowel[formant], at));
+        gain.gain.setValueAtTime(0, at);
+        gain.gain.linearRampToValueAtTime(.18, at + .014);
+        gain.gain.linearRampToValueAtTime(.085, at + duration * .62);
+        gain.gain.linearRampToValueAtTime(0, at + duration);
+        at += duration + (index === 2 ? .05 : .022);
+      }
+      const playing = {gain, source};
+      voice = playing;
+      source.onended = () => {
+        if (voice === playing) voice = null;
+        source.disconnect();
+        bands.forEach(band => band.disconnect());
+        gain.disconnect();
+      };
+      source.start(now);
+      source.stop(at);
+    }
+
+    dialogue = play;
+    context.addEventListener('statechange', () => {
+      if (pending && context.state === 'running') {
+        const line = pending;
+        pending = null;
+        play(line);
+      }
+    });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
+    for (const element of elements) {
+      const readLine = () => speak(element.textContent, element.dataset.dialogueVoice);
+      new MutationObserver(readLine).observe(element, {childList: true, characterData: true, subtree: true});
+    }
+    if (introLine) {
+      play(introLine);
+      introLine = undefined;
+    } else if (elements.length) {
+      speak(elements[0].textContent, elements[0].dataset.dialogueVoice);
+    }
+    return stop;
+  }
+
   function createMixer(context, stopSounds) {
     const mixer = {};
     for (const channel of Object.keys(channels)) {
@@ -79,6 +183,7 @@ const balikSound = (() => {
       });
       mixer[channel] = gain;
     }
+    const stopDialogue = connectDialogue(context, mixer.effects);
     window.addEventListener('pagehide', () => {
       // Silence the outputs immediately, even if Safari suspends asynchronously.
       const now = context.currentTime;
@@ -86,6 +191,7 @@ const balikSound = (() => {
         gain.gain.cancelScheduledValues(now);
         gain.gain.setValueAtTime(0, now);
       }
+      stopDialogue();
       stopSounds?.();
       if (context.state !== 'closed') context.suspend().catch(() => {});
     });
@@ -123,5 +229,5 @@ const balikSound = (() => {
     subscribe(({muted}) => { input.checked = !muted; });
   }
 
-  return {bindSpeaker, createMixer, isPageActive: () => pageActive, mountSettings, toggleMute};
+  return {bindSpeaker, createMixer, isPageActive: () => pageActive, mountSettings, speak, toggleMute};
 })();

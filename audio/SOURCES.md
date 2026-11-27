@@ -1,6 +1,6 @@
 # Zdroje zvuků
 
-Všechny použité nahrávky mají licenci [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Pro hru byly sestříhány, upraveny a převedeny do MP3.
+Nahrávky v tabulce mají licenci [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Pro hru byly sestříhány, upraveny a převedeny do MP3.
 
 | Soubor | Zdroj |
 | --- | --- |
@@ -15,3 +15,5 @@ Všechny použité nahrávky mají licenci [CC0 1.0](https://creativecommons.org
 | `music.mp3` | congusbongus, [Two Left Socks](https://opengameart.org/content/two-left-socks) |
 | `curious-theme.mp3` | emanresU, [8-Bit Curious Theme](https://opengameart.org/content/8-bit-curious-theme) |
 | `b2/assets/garage.mp3` | LordZintick, [The Arplands](https://opengameart.org/content/the-arplands) |
+
+Kuchyňská skladba „U měděného hrnce“ (`kitchen-trattoria.mp3`) je původní aranžmá, realizované zvukovou bankou [TimGM6mb](https://packages.debian.org/stable/timgm6mb-soundfont) Tima Brechbilla a Davida Boltona. Bublání, smažení a výdejní zvonek jsou syntetizované pro hru. Hlasové zvuky dialogů generuje Web Audio přímo při hraní.

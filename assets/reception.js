@@ -156,6 +156,7 @@ function renderClues() {
 
 function next(retry = false) {
   clearTimeout(retryTimer);
+  dialog.dataset.dialogueVoice = 'receptionist';
   phase = 'playing';
   elevator.reset();
   current = drawPuzzle(hard ? decks.hard : decks.standard);
@@ -212,6 +213,7 @@ reward.addEventListener('click', () => {
   reward.hidden = true;
   lift.hidden = false;
   beep(true);
+  dialog.dataset.dialogueVoice = 'courier';
   dialog.textContent = '„Díky! Konečně do prvního patra.“';
 });
 
