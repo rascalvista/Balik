@@ -1,0 +1,170 @@
+body {
+  background: radial-gradient(ellipse at 50% 30%, #1d2e3d, #10171e 72%);
+}
+
+main {
+  --top: max(10px, env(safe-area-inset-top));
+  --bottom: max(10px, env(safe-area-inset-bottom));
+  --gap: clamp(8px, 1.3vw, 18px);
+  --sidebar-width: clamp(10rem, 31vw, 22rem);
+  --parking-width: calc((100dvh - var(--top) - var(--bottom)) * 450 / 338);
+  width: min(100%, 1550px);
+  min-height: 100dvh;
+  padding: var(--top) max(10px, env(safe-area-inset-right)) var(--bottom) max(10px, env(safe-area-inset-left));
+  display: grid;
+  grid-template-columns: minmax(0, min(var(--parking-width), calc(100% - var(--sidebar-width) - var(--gap)))) var(--sidebar-width);
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "parking header" "parking briefing";
+  justify-content: center;
+  column-gap: var(--gap);
+}
+
+main::before {
+  content: "";
+  grid-area: 1 / 2 / -1 / -1;
+  border: 1px solid #435561;
+  border-radius: 8px;
+  background: #172633 url("assets/service-wall.webp") center / 100% 100% no-repeat;
+  box-shadow: inset 0 0 14px #080e15bd, 0 3px 12px #090d12b3;
+}
+
+.parking {
+  grid-area: parking;
+  align-self: center;
+  overflow: hidden;
+  border-radius: 6px;
+  outline: 1px solid #40515e;
+  box-shadow: 0 4px 22px #080b11;
+}
+
+.floor-header {
+  grid-area: header;
+  grid-template-columns: 34px minmax(0, 1fr) 34px;
+  gap: .44rem;
+  margin: clamp(8px, 4dvh, 26px) 9px 0;
+  padding: .48rem .38rem;
+  border-color: #667887;
+  border-radius: 6px;
+  background: linear-gradient(#304451, #192832 72%);
+  box-shadow: inset 0 1px #b9d4e12b, 0 4px 8px #0810187d;
+}
+
+.floor-header .game-brand--floor {
+  width: min(100%, 9rem);
+  --word-size: clamp(.89rem, 2.5vw, 1.45rem);
+}
+
+.floor-header .floor-label { font-size: clamp(.66rem, 1.6vw, .85rem); }
+
+.floor-header .floor-control {
+  width: 29px;
+  height: 31px;
+  border-color: #758591;
+  background: #19252e;
+}
+
+.floor-header .floor-control[aria-pressed="false"] { border-color: #455762; }
+
+.garage-briefing {
+  position: relative;
+  grid-area: briefing;
+  align-self: start;
+  padding: 0 9px 10px;
+}
+
+.courier-message {
+  display: flow-root;
+  margin: 10px 0 9px;
+  padding: .58rem .62rem;
+  border-color: #c0925c;
+  border-radius: 5px;
+  background: linear-gradient(#f4d9b1, #e7c49b);
+  box-shadow: inset 0 0 0 1px #fff1cb96, 0 3px 9px #0710199e;
+}
+
+.courier-message .courier {
+  float: left;
+  width: clamp(28px, 4vw, 51px);
+  margin: .02rem .45rem .1rem 0;
+}
+
+.message {
+  font-size: clamp(.78rem, 1.64vw, 1rem);
+  line-height: 1.35;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: .35rem;
+  padding: 6px;
+  border: 1px solid #50616d;
+  border-radius: 5px;
+  background: #142029e6;
+  color: #e5cfaa;
+  box-shadow: inset 0 1px #d5e8f21e, 0 3px 9px #080d14a3;
+}
+
+.controls button {
+  padding: .25rem .35rem;
+  border-color: #657888;
+  background: linear-gradient(#344956, #22323e);
+  font: 700 .83rem/1.2 system-ui, sans-serif;
+}
+
+.controls #count {
+  padding: 0 .15rem;
+  font: 700 .75rem/1.2 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.parking .floor-pickup { font-size: clamp(.72rem, 4.5dvh, 1.2rem); }
+
+@media (max-width: 710px) {
+  .floor-header {
+    grid-template-columns: 28px minmax(0, 1fr) 28px;
+    gap: .22rem;
+    margin-inline: 6px;
+    padding: .4rem .28rem;
+  }
+
+  .floor-header .floor-control { width: 26px; height: 29px; }
+  .garage-briefing { padding-inline: 6px; }
+  .controls { grid-template-columns: 1fr 1fr; }
+  .controls #count { grid-column: 1 / -1; padding-block: .12rem; text-align: center; }
+}
+
+body > dialog {
+  top: env(safe-area-inset-top);
+  bottom: env(safe-area-inset-bottom);
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1.25rem);
+}
+
+@media (max-height: 330px) {
+  .floor-header {
+    margin-top: 7px;
+    padding-block: .36rem;
+  }
+
+  .floor-header .game-brand--floor { width: min(100%, 7.5rem); }
+
+  .garage-briefing { padding-bottom: 3px; }
+
+  .courier-message {
+    margin-block: 7px;
+    padding: .44rem .5rem;
+  }
+
+  .courier-message .courier { width: 27px; }
+  .message { font-size: .8rem; line-height: 1.29; }
+
+  .controls {
+    grid-template-columns: 1fr 1fr auto;
+    gap: .26rem;
+    padding: 4px;
+  }
+
+  .controls button { padding-inline: .25rem; font-size: .76rem; }
+  .controls #count { grid-column: auto; padding-inline: .1rem; font-size: .68rem; }
+}

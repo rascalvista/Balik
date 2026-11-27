@@ -43,6 +43,7 @@ const laneTop = board.y + 2 * board.cell;
 const parkedMessage = 'Ve výtahu chybí všechna tlačítka. Portýr říkal, že správce má vždycky jedno rezervní v kufru auta. ' +
   'Jenže auta jsou tak těsně zaparkovaná, že kufr nejde otevřít. A já strašně spěchám! ' +
   'Odsuň ostatní auta a vyjeď červeným vozem doleva.';
+const compactMessage = 'Odsuň auta a vyjeď červeným vozem doleva. Tlačítko B1 je v jeho kufru.';
 
 const canvas = document.getElementById('parking');
 const context = canvas.getContext('2d');
@@ -55,6 +56,10 @@ const trunk = document.getElementById('trunk');
 const pickup = document.getElementById('pickup');
 const elevatorEntry = document.getElementById('elevator-entry');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const compactLayout = matchMedia(
+  '(orientation: landscape) and (min-width: 540px) and (max-height: 420px), ' +
+  '(orientation: landscape) and (min-width: 540px) and (max-width: 710px)'
+);
 const panel = createElevatorPanel({
   floor: 'B2',
   destination: 'B1',
@@ -193,6 +198,12 @@ function endDrag() {
   }
 }
 
+function updateParkingMessage() {
+  if (phase === 'parking') message.textContent = compactLayout.matches ? compactMessage : parkedMessage;
+}
+
+compactLayout.addEventListener('change', updateParkingMessage);
+
 function resetPuzzle() {
   garageAudio.stopEffects();
   endDrag();
@@ -205,7 +216,7 @@ function resetPuzzle() {
   exitStarted = 0;
   doorStarted = null;
   panel.reset();
-  message.textContent = parkedMessage;
+  updateParkingMessage();
   updateControls();
   requestDraw();
 }

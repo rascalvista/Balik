@@ -2,7 +2,7 @@
 <html lang="cs" data-balik-floor="B2">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>BALÍČEK | B2 – Garáže</title>
   <script src="../assets/balik-progress.js?v=1"></script>
   <link rel="stylesheet" href="../assets/elevator.css?v=2">
@@ -19,7 +19,8 @@
     main {
       width: min(100%, 860px);
       margin: 0 auto;
-      padding: 12px;
+      padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+        max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
     }
     .parking { position: relative; }
     canvas {
@@ -119,10 +120,11 @@
     }
     [hidden] { display: none; }
   </style>
+  <link rel="stylesheet" href="landscape.css?v=1" media="(orientation: landscape) and (min-width: 540px)">
   <script src="../assets/elevator.js?v=4" defer></script>
   <script src="../assets/balik-sound.js?v=3" defer></script>
   <script src="audio.js?v=3" defer></script>
-  <script src="game.js?v=7" defer></script>
+  <script src="game.js?v=8" defer></script>
   <script src="../assets/game-name.js" defer></script>
   <script src="../assets/balik-menu.js?v=7" defer></script>
 </head>
@@ -148,14 +150,16 @@
       <button class="floor-button floor-pickup" id="pickup" type="button" aria-label="Vyzvednout tlačítko B1" hidden>B1</button>
       <button class="elevator-entry" id="elevator-entry" type="button" aria-label="Nastoupit do výtahu" hidden></button>
     </div>
-    <div class="courier-message">
-      <span class="courier courier-portrait" aria-hidden="true"></span>
-      <p class="message" id="message" data-dialogue-voice="courier" role="status"></p>
-    </div>
-    <div class="controls">
-      <button id="undo" type="button" disabled>Zpět</button>
-      <button id="reset" type="button">Reset</button>
-      <span id="count">Tahů: 0</span>
+    <div class="garage-briefing">
+      <div class="courier-message">
+        <span class="courier courier-portrait" aria-hidden="true"></span>
+        <p class="message" id="message" data-dialogue-voice="courier" role="status"></p>
+      </div>
+      <div class="controls">
+        <button id="undo" type="button" disabled>Zpět</button>
+        <button id="reset" type="button">Reset</button>
+        <span id="count">Tahů: 0</span>
+      </div>
     </div>
   </main>
 </body>
