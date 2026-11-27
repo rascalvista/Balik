@@ -238,19 +238,22 @@ h1 span {
   image-rendering: pixelated;
 }
 .player-sprite[data-atlas="walk"] { background-image: url('art/courier-walk.webp'); }
-.held {
+.carry-stack {
   position: absolute;
   top: 42%;
   right: -5px;
   width: 28px;
   height: 28px;
-  object-fit: contain;
-  image-rendering: pixelated;
   filter: drop-shadow(0 2px 2px #20160ccb);
 }
-.actor[data-facing="s"] .held { right: 14px; top: 49%; }
-.actor:is([data-facing="w"], [data-facing="sw"], [data-facing="nw"]) .held { right: auto; left: -5px; }
-.actor[data-facing="n"] .held { z-index: -1; right: 15px; top: 53%; }
+.carry-stack img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+.carry-stack.is-plated { z-index: 1; width: 39px; height: 31px; }
+.carry-stack.is-plated img:last-child { inset: 0 0 auto; width: 27px; height: 26px; margin: auto; }
+.actor[data-facing="s"] .carry-stack { right: 14px; top: 49%; }
+.actor:is([data-facing="w"], [data-facing="sw"], [data-facing="nw"]) .carry-stack { right: auto; left: -5px; }
+.actor[data-facing="n"] .carry-stack { z-index: -1; right: 15px; top: 53%; }
+.actor[data-facing="n"] .carry-stack.is-plated { z-index: 1; right: -15px; top: 43%; }
+.actor[data-facing="s"] .carry-stack.is-plated { right: 7px; }
 
 .work-item {
   position: absolute;
@@ -261,6 +264,7 @@ h1 span {
   pointer-events: none;
 }
 .work-item img { width: 25px; height: 25px; image-rendering: pixelated; filter: drop-shadow(0 2px 2px #21190baf); }
+.plate-item img { margin-left: 3px; }
 .work-item span {
   position: absolute;
   left: 100%;
@@ -323,7 +327,7 @@ h1 span {
 .cook {
   position: absolute;
   z-index: 3;
-  top: 72%;
+  top: 77.2%;
   left: 34%;
   width: 50px;
   height: 62px;
@@ -338,16 +342,17 @@ h1 span {
   width: 43px;
   height: 100%;
   margin: auto;
-  background: url('art/cook.png') center / 100% 100% no-repeat;
+  background: url('art/cook.png?v=2') center / 100% 100% no-repeat;
   image-rendering: pixelated;
 }
 .cook.is-running .cook-body {
-  background-image: url('art/cook-run.png');
+  background-image: url('art/cook-run.png?v=2');
   background-size: 200% 100%;
   animation: cook-footsteps .17s steps(1, end) infinite;
 }
 @keyframes cook-footsteps { from { background-position: left; } 50%, to { background-position: right; } }
-.cook-carry { position: absolute; width: 22px; height: 22px; top: 46%; right: 2px; image-rendering: pixelated; }
+.cook-carry { width: 22px; height: 22px; top: 46%; right: 2px; }
+.cook-carry.is-plated { right: -4px; }
 .game.is-sequence .cook::after { display: none; }
 .game.is-sequence .cook, .game.is-sequence .recipe-preview { pointer-events: none; }
 .game:is(.is-sequence, .is-finished) :is(.stick, .action) { visibility: hidden; }
@@ -408,29 +413,63 @@ h1 span {
 .burner-controls [aria-pressed="true"] { border-color: #352618; background: #fff8d9; box-shadow: inset 0 0 0 1px #352618; }
 .burner-controls button:focus-visible { outline: 2px solid #fff4cf; outline-offset: 2px; }
 
+.kitchen-floor-cover {
+  position: absolute;
+  z-index: 1;
+  left: 29.6501%;
+  width: 40.6998%;
+  top: 76.0359%;
+  bottom: 0;
+  pointer-events: none;
+}
+
+/* Borrow aligned rows of tiles and both stretches of the lower wall from the room artwork. */
+.kitchen-floor-cover span {
+  position: absolute;
+  background: url('art/kitchen.webp') no-repeat;
+}
+.kitchen-floor-cover span:nth-child(1) {
+  inset: 0 0 94.5245%;
+  background-size: 245.7014% 7621.0526%;
+  background-position: 50% 66.4101%;
+}
+.kitchen-floor-cover span:nth-child(2) {
+  inset: 5.4755% 0 44.0922%;
+  background-size: 245.7014% 836.9942%;
+  background-position: 50% 70.1176%;
+}
+.kitchen-floor-cover span:nth-child(3), .kitchen-floor-cover span:nth-child(4) {
+  top: 55.9078%;
+  bottom: 0;
+  width: 50%;
+  background-size: 491.4027% 946.4052%;
+}
+.kitchen-floor-cover span:nth-child(3) { left: 0; background-position: 11.6763% 100%; }
+.kitchen-floor-cover span:nth-child(4) { right: 0; background-position: 88.4393% 100%; }
+
 .recipe-preview {
   position: absolute;
   z-index: 2;
-  left: 29.5%;
-  right: 29.5%;
-  top: 75.9%;
-  bottom: 0;
-  padding: 6px 4px 10px;
+  left: 50%;
+  bottom: 16px;
+  width: min(122px, 35%);
+  min-height: 72px;
+  padding: 4px;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   border: 2px ridge #b28d56;
-  border-bottom: 0;
-  border-radius: 5px 5px 0 0;
+  border-radius: 5px;
   background: repeating-linear-gradient(0deg, #1c241c24 0 1px, transparent 1px 5px), linear-gradient(#35453a, #1b2820);
   box-shadow: inset 0 0 0 3px #59462e;
   color: #ffe6b0;
 }
-.recipe-preview strong { font: 700 12px/1.05 var(--display); }
+.recipe-preview strong { font: 700 11px/1.05 var(--display); }
 .recipe-preview-row { display: flex; align-items: center; justify-content: center; gap: 2px; max-width: 100%; }
-.recipe-preview-row img { width: clamp(21px, 6.6vw, 28px); aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; }
+.recipe-preview-row img { width: clamp(17px, 5.5vw, 22px); aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; }
 .recipe-preview-row .recipe-arrow { color: #e9ba66; font: 700 12px/1 var(--label); }
 .recipe-preview:focus-visible { outline: 2px solid #ffdd83; outline-offset: -4px; }
 
@@ -482,8 +521,8 @@ h1 span {
   aspect-ratio: 1;
   border: 1px solid #e1b87694;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 42%, #24352bb0 0 40%, #17261cff 100%);
-  box-shadow: inset 0 0 0 4px #151e18a1, inset 0 0 0 5px #ddbb7f42, 0 4px 8px #15191093;
+  background: radial-gradient(circle at 50% 42%, #24352b4d 0 40%, #17261c68 100%);
+  box-shadow: inset 0 0 0 4px #151e185c, inset 0 0 0 5px #ddbb7f66, 0 4px 8px #15191062;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -512,8 +551,8 @@ h1 span {
   transform: translate(calc(-50% + var(--stick-x, 0px)), calc(-50% + var(--stick-y, 0px)));
   border: 1px solid #dcb282b8;
   border-radius: 50%;
-  background: radial-gradient(circle at 43% 31%, #52634dd8, #293a2fdc 63%, #18231bed);
-  box-shadow: inset 0 0 0 3px #242b2075, inset 0 0 0 4px #e7c28a44, 0 3px 7px #0b130c9c;
+  background: radial-gradient(circle at 43% 31%, #52634d83, #293a2f9c 63%, #18231ba5);
+  box-shadow: inset 0 0 0 3px #242b2069, inset 0 0 0 4px #e7c28a58, 0 3px 7px #0b130c75;
   pointer-events: none;
 }
 
@@ -540,12 +579,12 @@ h1 span {
   gap: 2px;
   border: 2px solid #f1c480e6;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px #1d1b12ba, inset 0 0 0 3px #ddb89148, 0 4px 10px #0009;
-  background: radial-gradient(circle at 50% 22%, #664a2bdc, #2c241de8 79%);
+  box-shadow: 0 0 0 2px #1d1b1280, inset 0 0 0 3px #ddb89148, 0 4px 10px #0007;
+  background: radial-gradient(circle at 50% 22%, #664a2b63, #2c241d85 79%);
   color: #ffe6b0;
   font: 700 14px/1.1 var(--display);
   letter-spacing: .015em;
-  text-shadow: 0 1px 1px #251b10;
+  text-shadow: 0 1px 2px #18120b, 0 0 4px #20160c;
 }
 
 .action-glyph {

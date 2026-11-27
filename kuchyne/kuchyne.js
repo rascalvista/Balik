@@ -7,7 +7,7 @@
   const board = find('.kitchen');
   const actor = find('.actor');
   const sprite = find('.player-sprite');
-  const heldImage = find('.held');
+  const heldStack = actor.querySelector('.carry-stack');
   const stationLabel = find('.station');
   const burnerControls = find('.burner-controls');
   const burnerFocus = find('.burner-focus');
@@ -16,6 +16,7 @@
   const cook = find('.cook');
   const cookCarry = find('.cook-carry');
   const preview = find('.recipe-preview');
+  const kitchenFloor = find('.kitchen-floor-cover');
   const kitchenLift = find('.kitchen-lift');
   const liftReturn = find('.lift-return');
   const handoff = find('.handoff');
@@ -59,7 +60,7 @@
   const stove = {type: 'stove', name: 'Sporák', x: 20.3, label: [10, 31]};
   const counters = [39.4, 46.1, 52.5].map((y, index) => ({type: 'plate', index, name: `Talíř ${index + 1}`, x: 76.6, y, label: [84, 58.7]}));
   const cuttingSides = [[48, 38.7, 4, 34], [48, 64.5, 0, 34], [32, 52.5, 2, 22], [65, 52.5, 6, 22]];
-  const coachHome = [34, 72];
+  const coachHome = [34, 77.2];
   const stations = [
     {type: 'stock', name: 'Špajz', items: pantry, x: 25, y: 32.9, label: [25, 27]},
     {type: 'stock', name: 'Lednice', items: fridge, x: 49.2, y: 33.4, label: [49.5, 12.4]},
@@ -121,7 +122,11 @@
     burnerControls.append(button);
     return {button, item: button.querySelector('.burner-item'), status: button.lastElementChild};
   });
-  const plateViews = counters.map(station => effect(87.3, station.y));
+  const plateViews = counters.map(station => {
+    const view = effect(87.3, station.y);
+    view.element.classList.add('plate-item');
+    return view;
+  });
   const boardView = effect(46, 45.3);
   const keys = new Set();
   let state;
@@ -178,11 +183,11 @@
 
   function item(kind) { return {kind}; }
   function dish(key, count = 0) { return {key, count}; }
-  function picture(food) {
+  function picture(food, plated = food.plated) {
     if (food.burned) return 'burned';
     if (!food.key) return ingredients[food.kind][1];
     const art = recipes[food.key].art;
-    return food.plated ? art : `${art}-cooking`;
+    return plated ? art : `${art}-cooking`;
   }
   function nameOf(food) { return food.burned ? 'Připálené jídlo' : food.key ? recipes[food.key].name : ingredients[food.kind][0]; }
   function timeText(seconds) {
@@ -253,7 +258,7 @@
     const text = document.createElement('p');
     text.className = 'cook-intro';
     const portrait = document.createElement('img');
-    portrait.src = asset('cook');
+    portrait.src = `${asset('cook')}?v=2`;
     portrait.alt = '';
     text.append(portrait, canDemonstrate ? 'Ukážu ti, jak usmažit a vydat první vejce.' : 'Palcem táhni po levém ovladači. Šipka ti ukáže, kam jít.');
     const steps = document.createElement('ol');
@@ -452,10 +457,10 @@
       const next = recipes[food.key].finish[food.count];
       say('Talíř', next ? `Ještě chybí ${ingredients[next][0].toLowerCase()}.` : 'Zvedni talíř a odnes ho do výdeje.');
     }];
-    if (plate && !state.held) return ['Zvednout', picture(plate), () => {
+    if (plate && !state.held) return ['Zvednout talíř', picture(plate), () => {
       state.plates[index] = null;
       moveItem(plate, 'take', 'pickup');
-      say('V ruce', nameOf(plate));
+      say('V ruce', `Talíř s jídlem · ${nameOf(plate)}.`);
     }];
     const finish = plate && recipes[plate.key].finish[plate.count];
     if (finish && state.held?.kind === finish) return ['Přidat', picture(state.held), () => {
@@ -575,20 +580,18 @@
       lastAction = signature;
     }
     if (state.held) {
-      const source = asset(picture(state.held));
-      if (heldImage.getAttribute('src') !== source) heldImage.src = source;
-      heldImage.hidden = false;
-      const label = `Kurýr drží: ${nameOf(state.held)}`;
+      showCarry(heldStack, picture(state.held, false), state.held.plated);
+      const label = state.held.plated ? `Kurýr nese talíř s jídlem · ${nameOf(state.held)}` : `Kurýr drží · ${nameOf(state.held)}`;
       if (actor.getAttribute('aria-label') !== label) actor.setAttribute('aria-label', label);
     } else {
-      heldImage.hidden = true;
+      showCarry(heldStack);
       if (actor.getAttribute('aria-label') !== 'Kurýr s volnýma rukama') actor.setAttribute('aria-label', 'Kurýr s volnýma rukama');
     }
     updateGuide();
   }
 
   function showWork(view, food, text, mode = '') {
-    const icon = view.element.classList.contains('has-pot') && food?.kind === 'water' ? 'water-in-pot' : food && picture(food);
+    const icon = view.element.classList.contains('has-pot') && food?.kind === 'water' ? 'water-in-pot' : food && picture(food, false);
     const source = icon ? asset(icon) : '';
     if (food && view.image.getAttribute('src') !== source) view.image.src = source;
     view.image.hidden = !food;
@@ -834,9 +837,18 @@
     element.classList.remove('is-running');
   }
 
-  function holdForDemo(name) {
-    cookCarry.hidden = !name;
-    if (name) cookCarry.src = asset(name);
+  function showCarry(stack, name, plated = false) {
+    stack.hidden = !name;
+    if (!name) return;
+    const [plate, food] = stack.children;
+    stack.classList.toggle('is-plated', plated);
+    plate.hidden = !plated;
+    const source = asset(name);
+    if (food.getAttribute('src') !== source) food.src = source;
+  }
+
+  function holdForDemo(name, plated = false) {
+    showCarry(cookCarry, name, plated);
   }
 
   async function runDemo() {
@@ -867,7 +879,7 @@
     sound('put');
     await pause(440);
     showWork(plateViews[0], null, '');
-    holdForDemo('fried-egg');
+    holdForDemo('fried-egg-cooking', true);
     say('Kuchtík', '4. Talíř odnesu do výdeje.');
     await runPath(cook, [[77.5, 32.7]], speed);
     holdForDemo();
@@ -896,6 +908,7 @@
     handoff.hidden = true;
 
     preview.hidden = true;
+    kitchenFloor.hidden = true;
     kitchenLift.hidden = false;
     await pause(160);
     kitchenLift.classList.add('is-open');
@@ -935,7 +948,7 @@
     game.classList.remove('is-finished');
     kitchenLift.classList.remove('is-open');
     kitchenLift.hidden = liftReturn.hidden = handoff.hidden = true;
-    preview.hidden = actor.hidden = false;
+    preview.hidden = actor.hidden = kitchenFloor.hidden = false;
     place(cook, ...coachHome);
     markBurner();
     refill();

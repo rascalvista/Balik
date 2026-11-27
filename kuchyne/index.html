@@ -7,11 +7,11 @@
   <link rel="preload" href="art/courier-walk.webp" as="image">
   <link rel="stylesheet" href="../assets/balik-ui.css?v=2">
   <link rel="stylesheet" href="../assets/elevator.css?v=2">
-  <link rel="stylesheet" href="kuchyne.css?v=6">
+  <link rel="stylesheet" href="kuchyne.css?v=7">
   <script src="../assets/game-name.js" defer></script>
   <script src="../assets/balik-sound.js?v=2" defer></script>
   <script src="../assets/elevator.js?v=3" defer></script>
-  <script src="kuchyne.js?v=5" defer></script>
+  <script src="kuchyne.js?v=6" defer></script>
   <script src="../assets/balik-menu.js?v=6" defer></script>
 </head>
 <body>
@@ -36,9 +36,14 @@
       <span class="plate-focus" aria-hidden="true" hidden></span>
       <span class="guide-target" aria-hidden="true" hidden></span>
       <div class="kitchen-effects"></div>
-      <button class="cook" type="button" aria-label="Kuchtík – ukázat postup"><span class="cook-body"></span><img class="cook-carry" alt="" hidden></button>
+      <div class="kitchen-floor-cover" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <button class="cook" type="button" aria-label="Kuchtík – ukázat postup">
+        <span class="cook-body"></span>
+        <span class="carry-stack cook-carry" hidden><img class="held-plate" src="art/plate.png" alt="" hidden><img class="cook-food" alt=""></span>
+      </button>
       <div class="actor" aria-label="Kurýr se žlutým batohem">
-        <span class="player-sprite"></span><img class="held" alt="" hidden>
+        <span class="player-sprite"></span>
+        <span class="carry-stack" hidden><img class="held-plate" src="art/plate.png" alt="" hidden><img class="held" alt=""></span>
       </div>
       <button class="recipe-preview" type="button" aria-label="Otevřít obrázkový recept"></button>
       <div class="kitchen-lift" aria-hidden="true" hidden>
