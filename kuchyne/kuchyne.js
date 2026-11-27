@@ -785,14 +785,7 @@
   const elevator = createElevatorPanel({
     floor: '1',
     destination: '2',
-    onPress: () => sound('put'),
-    onTravel() {
-      openPanel('2 – Restaurace', 'Hotovo');
-      const text = document.createElement('p');
-      text.textContent = 'Kuchyně je hotová a tlačítko 2 je v panelu. Restaurace se připravuje.';
-      panelBody.append(text);
-      panelButton('Hlavní obrazovka', () => location.assign(balikProgress.home));
-    }
+    onPress: () => sound('put')
   });
   liftReturn.addEventListener('click', () => elevator.open());
 
@@ -964,7 +957,7 @@
       preview.hidden = kitchenFloor.hidden = actor.hidden = true;
       kitchenLift.hidden = liftReturn.hidden = false;
       kitchenLift.classList.add('is-open');
-      say('Kurýr', checkpoint === 'carrying' ? 'Mám tlačítko 2. Zacvaknu ho ve výtahu.' : 'Kuchyně je hotová. Výtahem se můžu vrátit na nižší patra.');
+      say('Kurýr', checkpoint === 'carrying' ? 'Mám tlačítko 2. Zacvaknu ho ve výtahu.' : 'Kuchyně je hotová. Výtahem můžu do restaurace.');
       refresh();
       return;
     }

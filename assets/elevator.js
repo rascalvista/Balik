@@ -67,10 +67,11 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
       const pending = label === destination && checkpoint === 'carrying';
       const installed = balikProgress.isUnlocked(label);
       button.classList.toggle('empty-slot', !installed);
-      const futureFloor = label === '2' && floor !== '1';
-      button.disabled = traveling || label === floor || futureFloor || (!pending && !installed);
-      button.setAttribute('aria-label', pending ? 'Zasadit tlačítko ' + label : futureFloor && installed
-        ? '2 · Restaurace se připravuje' : label === floor
+      const level = balikProgress.floors.find(({id}) => id === label);
+      const hasDestination = Boolean(level?.path || (label === destination && onTravel));
+      button.disabled = traveling || label === floor || (!pending && (!installed || !hasDestination));
+      button.setAttribute('aria-label', pending ? 'Zasadit tlačítko ' + label : installed && !hasDestination
+        ? level.name + ' se připravují' : label === floor
         ? 'Aktuální patro ' + label
         : installed ? (label === '0' ? 'Jet do přízemí' : 'Jet do ' + label) : 'Zamčené patro ' + label);
     }

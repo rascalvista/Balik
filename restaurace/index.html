@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="cs" data-balik-floor="2">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>BALÍČEK | 2 – Restaurace</title>
+  <script src="../assets/balik-progress.js?v=2"></script>
+  <link rel="stylesheet" href="../assets/game-name.css?v=2">
+  <link rel="stylesheet" href="../assets/balik-ui.css?v=3">
+  <link rel="stylesheet" href="../assets/elevator.css?v=2">
+  <link rel="stylesheet" href="restaurant.css?v=1">
+  <link rel="preload" as="image" href="art/bistro.webp">
+  <script src="../assets/game-name.js" defer></script>
+  <script src="../assets/balik-sound.js?v=3" defer></script>
+  <script src="../assets/elevator.js?v=5" defer></script>
+  <script src="audio.js?v=1" defer></script>
+  <script src="pour.js?v=1" defer></script>
+  <script src="restaurant.js?v=1" defer></script>
+  <script src="../assets/balik-menu.js?v=7" defer></script>
+</head>
+<body>
+  <main class="restaurant" data-floor="2">
+    <header class="floor-header">
+      <button class="floor-control" id="sound-toggle" type="button" aria-label="Zvuk">🔈</button>
+      <h1 class="floor-brand">
+        <span class="game-brand game-brand--floor">
+          <img src="../assets/brand-parcel.png" class="game-brand-parcel" width="120" height="101" alt="">
+          <span class="game-brand-name" data-game-name>BALÍČEK</span>
+        </span>
+        <span class="floor-label">2 – Restaurace</span>
+      </h1>
+      <button class="floor-control" id="balik-menu-toggle" type="button" aria-label="Otevřít menu hry">☰</button>
+    </header>
+
+    <section class="ticket-panel" aria-labelledby="ticket-title">
+      <div class="ticket-heading">
+        <h2 id="ticket-title">Objednávky</h2>
+        <span id="tally">0 / 6</span>
+      </div>
+      <ol class="restaurant-tickets"></ol>
+    </section>
+
+    <div class="bistro" aria-label="Hotelové bistro se třemi stoly">
+      <span class="station-sign" data-station="pass">Výdej</span>
+      <span class="station-sign" data-station="bar">Bar</span>
+      <span class="station-sign" data-station="lift" hidden>Výtah</span>
+      <div class="table-markers" aria-hidden="true"></div>
+      <div class="bistro-lift" hidden aria-hidden="true"><i></i><i></i></div>
+      <div class="waiter" role="img" aria-label="Kurýr">
+        <span class="waiter-sprite" aria-hidden="true"></span>
+        <span class="waiter-item" hidden aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <div class="restaurant-status">
+      <span class="courier courier-portrait" aria-hidden="true"></span>
+      <p id="restaurant-line" role="status" data-dialogue-voice="courier"></p>
+    </div>
+
+    <div class="service-controls">
+      <div class="service-stick" role="group" aria-label="Osmisměrné ovládání pohybu">
+        <span class="stick-marks" aria-hidden="true"></span>
+        <span class="stick-cap" aria-hidden="true"></span>
+      </div>
+      <button class="service-action" type="button" aria-keyshortcuts="E" disabled>
+        <span class="action-spot">Přistup ke stanovišti</span>
+        <strong class="action-name">Akce</strong>
+      </button>
+    </div>
+
+    <button id="reset" type="button" hidden>Restartovat patro</button>
+  </main>
+
+  <dialog id="pour-panel" class="hotel-menu" aria-labelledby="pour-title">
+    <header class="hotel-menu-header">
+      <h2 id="pour-title"></h2>
+      <button type="button" class="hotel-menu-close" id="pour-close" aria-label="Zavřít nalévání">×</button>
+    </header>
+    <div class="hotel-menu-content pour-content">
+      <p>Podrž tlačítko a pusť ho, až hladina vystoupá do zlatého pásma.</p>
+      <div class="glass-meter" role="meter" aria-label="Nalitý objem" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <span class="glass-liquid"></span>
+        <span class="glass-goal"></span>
+      </div>
+      <p class="pour-message" role="status"></p>
+      <button class="hotel-action hotel-primary" type="button" id="pour-hold">Podrž pro nalévání</button>
+    </div>
+  </dialog>
+
+  <dialog id="hotel-rooms" class="hotel-menu" aria-labelledby="hotel-rooms-title">
+    <header class="hotel-menu-header">
+      <h2 id="hotel-rooms-title">3 – Hotelové pokoje</h2>
+      <form method="dialog"><button class="hotel-menu-close" aria-label="Zavřít">×</button></form>
+    </header>
+    <div class="hotel-menu-content">
+      <p>Tlačítko 3 je v panelu. Hotelové pokoje se připravují.</p>
+      <a class="hotel-action" href="../">Hlavní obrazovka</a>
+    </div>
+  </dialog>
+</body>
+</html>

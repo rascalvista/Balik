@@ -8,7 +8,8 @@ const balikProgress = (() => {
     {id: 'B1', name: 'Strojovna', path: 'b1/'},
     {id: '0', name: 'Recepce', path: 'recepce/'},
     {id: '1', name: 'Kuchyně', path: 'kuchyne/'},
-    {id: '2', name: 'Restaurace'}
+    {id: '2', name: 'Restaurace', path: 'restaurace/'},
+    {id: '3', name: 'Hotelové pokoje'}
   ];
   const indexOf = id => floors.findIndex(floor => floor.id === id);
 
