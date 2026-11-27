@@ -4,7 +4,7 @@ const kitchenAudio = (() => {
   const base = new URL('../audio/', document.currentScript.src);
   const SoundContext = window.AudioContext || window.webkitAudioContext;
   const clips = {
-    room: {file: 'kitchen-jazz-brunch.mp3', channel: 'music', level: .21},
+    room: {file: 'kitchen-rendezvous.mp3', channel: 'music', level: .21},
     cabin: {file: 'music.mp3', channel: 'music', level: .29},
     boil: {file: 'kitchen-boil.mp3', channel: 'effects', level: .31},
     fry: {file: 'kitchen-fry.mp3', channel: 'effects', level: .27},
@@ -139,7 +139,7 @@ const kitchenAudio = (() => {
   window.addEventListener('pageshow', event => { if (event.persisted && context) unlock(); });
   document.addEventListener('DOMContentLoaded', () => {
     const credit = document.createElement('small');
-    credit.textContent = 'Jazz Brunch · Kevin MacLeod (CC BY 4.0)';
+    credit.textContent = 'Rendezvous · Shane Ivers (CC BY 4.0)';
     document.querySelector('#balik-menu .sound-settings')?.append(credit);
   }, {once: true});
   balikSound.bindSpeaker(document.querySelector('#sound-toggle'));

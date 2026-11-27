@@ -16,6 +16,6 @@ Nahrávky v tabulce mají licenci [CC0 1.0](https://creativecommons.org/publicdo
 | `curious-theme.mp3` | emanresU, [8-Bit Curious Theme](https://opengameart.org/content/8-bit-curious-theme) |
 | `b2/assets/garage.mp3` | LordZintick, [The Arplands](https://opengameart.org/content/the-arplands) |
 
-Kuchyňská skladba [`Jazz Brunch`](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1700074) od Kevina MacLeoda (Incompetech, ISRC USUAN1700074) je pod licencí [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). `kitchen-jazz-brunch.mp3` je výřez upravený pro plynulé opakování s upravenou hlasitostí.
+Kuchyňská skladba [Rendezvous](https://www.silvermansound.com/free-music/rendezvous) © 2016 Shane Ivers (Silverman Sound Studios, ISRC UKEZT1600065) je pod licencí [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). `kitchen-rendezvous.mp3` je výřez upravený pro plynulé opakování se ztlumenou hlasitostí.
 
 Bublání, smažení a výdejní zvonek jsou syntetizované pro hru. Hlasové zvuky dialogů generuje Web Audio přímo při hraní.
