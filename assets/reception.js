@@ -30,11 +30,7 @@ const tones = new Set();
 const elevator = createElevatorPanel({
   floor: '0',
   destination: '1',
-  onPress: () => beep(true),
-  onTravel() {
-    phase = 'departed';
-    location.href = '../kuchyne/';
-  }
+  onPress: () => beep(true)
 });
 
 function stopMusic() {
@@ -207,14 +203,20 @@ difficulty.addEventListener('click', () => {
   next();
 });
 
-reward.addEventListener('click', () => {
-  if (phase !== 'correct') return;
+function showLift(message) {
   phase = 'rewarded';
+  for (const suitcase of cases) suitcase.disabled = true;
   reward.hidden = true;
   lift.hidden = false;
-  beep(true);
   dialog.dataset.dialogueVoice = 'courier';
-  dialog.textContent = '„Díky! Konečně do prvního patra.“';
+  dialog.textContent = message;
+}
+
+reward.addEventListener('click', () => {
+  if (phase !== 'correct') return;
+  balikProgress.collect('0');
+  beep(true);
+  showLift('„Díky! Konečně do prvního patra.“');
 });
 
 lift.addEventListener('click', () => {
@@ -223,17 +225,18 @@ lift.addEventListener('click', () => {
 find('.reset').addEventListener('click', () => next());
 find('.back').addEventListener('click', () => {
   stopMusic();
-  if (document.referrer && new URL(document.referrer).origin === location.origin) history.back();
-  else location.href = '../';
+  location.href = balikProgress.home;
 });
 if (SoundContext) document.addEventListener('click', activateAudio, true);
 window.addEventListener('pageshow', event => {
   if (!event.persisted) return;
-  if (phase === 'departed') {
-    phase = 'rewarded';
-    elevator.reset();
-  }
   if (audioContext) activateAudio();
 });
 balikSound.bindSpeaker(sound, {painted: true});
 next();
+const checkpoint = balikProgress.checkpoint('0');
+if (checkpoint === 'carrying' || checkpoint === 'installed') {
+  showLift(checkpoint === 'carrying'
+    ? '„Mám tlačítko 1. Zacvaknu ho ve výtahu.“'
+    : '„Doklady jsou předané. Výtahem můžu dál.“');
+}

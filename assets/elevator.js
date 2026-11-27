@@ -42,10 +42,9 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
   const openDoor = dialog.querySelector('.elevator-door-open');
   const shutDoor = dialog.querySelector('.elevator-door-shut');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  let installed = false;
   let traveling = false;
   let arrivalTimer;
-  let target;
+  const floorButtons = new Map();
 
   function setAudioScene(scene) {
     document.dispatchEvent(new CustomEvent('balik:elevator-audio', {detail: scene}));
@@ -56,23 +55,28 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
     button.type = 'button';
     button.className = 'floor-button empty-slot';
     button.textContent = label;
-    button.disabled = label !== destination;
-    if (label === destination) target = button;
-    if (label === floor) {
-      button.setAttribute('aria-current', 'true');
-      if (floor === 'B1') button.classList.remove('empty-slot');
-    }
+    if (label === floor) button.setAttribute('aria-current', 'true');
+    button.addEventListener('click', () => pressFloor(label, button));
+    floorButtons.set(label, button);
     buttons.append(button);
   }
 
-  function updateTarget() {
-    target.classList.toggle('empty-slot', !installed);
-    target.setAttribute('aria-label', installed
-      ? (destination === '0' ? 'Jet do přízemí' : 'Jet do ' + destination)
-      : 'Zasadit tlačítko ' + destination);
-    instruction.textContent = installed
-      ? 'Stiskni ' + destination + '.'
-      : 'Zasaď tlačítko ' + destination + ' do panelu.';
+  function syncButtons() {
+    const checkpoint = balikProgress.checkpoint(floor);
+    for (const [label, button] of floorButtons) {
+      const pending = label === destination && checkpoint === 'carrying';
+      const installed = balikProgress.isUnlocked(label);
+      button.classList.toggle('empty-slot', !installed);
+      const futureFloor = label === '2' && floor !== '1';
+      button.disabled = traveling || label === floor || futureFloor || (!pending && !installed);
+      button.setAttribute('aria-label', pending ? 'Zasadit tlačítko ' + label : futureFloor && installed
+        ? '2 · Restaurace se připravuje' : label === floor
+        ? 'Aktuální patro ' + label
+        : installed ? (label === '0' ? 'Jet do přízemí' : 'Jet do ' + label) : 'Zamčené patro ' + label);
+    }
+    instruction.textContent = checkpoint === 'carrying'
+      ? 'Zasaď tlačítko ' + destination + ' do panelu.'
+      : 'Vyber patro.';
   }
 
   function setDoors(closed) {
@@ -81,30 +85,43 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
     shutDoor.disabled = closed || traveling;
   }
 
-  function travel() {
+  function travel(label, button) {
     traveling = true;
     setDoors(true);
+    syncButtons();
     dialog.classList.add('is-traveling');
-    target.classList.add('is-selected');
-    target.disabled = true;
+    button.classList.add('is-selected');
     closePanel.disabled = true;
-    instruction.textContent = 'Výtah jede do ' + (destination === '0' ? 'přízemí.' : destination + '.');
+    instruction.textContent = 'Výtah jede do ' + (label === '0' ? 'přízemí.' : label + '.');
     arrivalTimer = setTimeout(() => {
-      setAudioScene('departing');
+      if (balikProgress.canVisit(label)) {
+        setAudioScene('departing');
+        location.replace(balikProgress.floorUrl(label));
+        return;
+      }
+      traveling = false;
+      button.classList.remove('is-selected');
+      dialog.classList.remove('is-traveling');
+      closePanel.disabled = false;
       dialog.close();
-      onTravel();
+      setAudioScene('room');
+      onTravel?.();
     }, reducedMotion.matches ? 0 : 1000);
   }
 
-  target.addEventListener('click', () => {
+  function pressFloor(label, button) {
     onPress();
-    if (installed) {
-      travel();
+    if (button.classList.contains('empty-slot')) {
+      if (balikProgress.isUnlocked(label) || balikProgress.install(floor, label)) {
+        syncButtons();
+        instruction.textContent = 'Stiskni ' + label + '.';
+      } else {
+        instruction.textContent = 'Postup se nepodařilo uložit. Otevři hru z hlavní obrazovky.';
+      }
       return;
     }
-    installed = true;
-    updateTarget();
-  });
+    if (balikProgress.isUnlocked(label)) travel(label, button);
+  }
 
   openDoor.addEventListener('click', () => {
     setDoors(false);
@@ -124,29 +141,28 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
     if (traveling) event.preventDefault();
   });
 
-  updateTarget();
   document.body.append(dialog);
 
   return {
     open() {
       if (dialog.open || traveling) return;
+      syncButtons();
       setDoors(false);
       dialog.showModal();
       setAudioScene('cabin');
-      target.focus();
+      const next = floorButtons.get(destination);
+      (next.disabled ? closePanel : next).focus();
     },
     reset() {
       clearTimeout(arrivalTimer);
       traveling = false;
-      installed = false;
       if (dialog.open) dialog.close();
       setAudioScene('room');
       dialog.classList.remove('is-traveling');
-      target.classList.remove('is-selected');
-      target.disabled = false;
+      buttons.querySelector('.is-selected')?.classList.remove('is-selected');
       closePanel.disabled = false;
       setDoors(false);
-      updateTarget();
+      syncButtons();
     }
   };
 }

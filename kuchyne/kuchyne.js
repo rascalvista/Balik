@@ -464,7 +464,10 @@
     moveItem(null, 'put', 'serve');
     say('Výdej', state.completed === 1 ? 'První jídlo je venku! Klepnutím na objednávku otevřeš další recept.' : `${nameOf(food)} vydáno.`);
     refill();
-    if (state.completed === queue.length) runFinale();
+    if (state.completed === queue.length) {
+      balikProgress.collect('1');
+      runFinale();
+    }
   }
 
   function details(station) {
@@ -786,9 +789,9 @@
     onTravel() {
       openPanel('2 – Restaurace', 'Hotovo');
       const text = document.createElement('p');
-      text.textContent = 'Tlačítko 2 je zacvaknuté v panelu. Kuchyně je hotová.';
+      text.textContent = 'Kuchyně je hotová a tlačítko 2 je v panelu. Restaurace se připravuje.';
       panelBody.append(text);
-      liftReturn.hidden = true;
+      panelButton('Hlavní obrazovka', () => location.assign(balikProgress.home));
     }
   });
   liftReturn.addEventListener('click', () => elevator.open());
@@ -939,7 +942,7 @@
     requestAnimationFrame(update);
   }
 
-  function reset() {
+  function reset(resume = false) {
     if (state?.scene) return;
     stopInput();
     elevator.reset();
@@ -953,13 +956,25 @@
     preview.hidden = actor.hidden = kitchenFloor.hidden = false;
     place(cook, ...coachHome);
     markBurner();
+    const checkpoint = resume ? balikProgress.checkpoint('1') : 'playing';
+    if (checkpoint === 'carrying' || checkpoint === 'installed') {
+      state.completed = queue.length;
+      state.reward = true;
+      game.classList.add('is-finished');
+      preview.hidden = kitchenFloor.hidden = actor.hidden = true;
+      kitchenLift.hidden = liftReturn.hidden = false;
+      kitchenLift.classList.add('is-open');
+      say('Kurýr', checkpoint === 'carrying' ? 'Mám tlačítko 2. Zacvaknu ho ve výtahu.' : 'Kuchyně je hotová. Výtahem se můžu vrátit na nižší patra.');
+      refresh();
+      return;
+    }
     refill();
     drawCourier(-1, 0);
     tickTimers();
     refresh();
     openCoach();
   }
-  find('#reset').addEventListener('click', reset);
-  reset();
+  find('#reset').addEventListener('click', () => reset());
+  reset(true);
   requestAnimationFrame(update);
 })();

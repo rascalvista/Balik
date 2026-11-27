@@ -58,8 +58,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const panel = createElevatorPanel({
   floor: 'B2',
   destination: 'B1',
-  onPress: () => garageAudio.play('click'),
-  onTravel: () => window.location.assign('../')
+  onPress: () => garageAudio.play('click')
 });
 
 function placeControl(button, {x, y, width, height}) {
@@ -302,6 +301,7 @@ trunk.addEventListener('click', () => {
 pickup.addEventListener('click', () => {
   if (phase !== 'pickup') return;
   phase = 'opening';
+  balikProgress.collect('B2');
   doorStarted = performance.now();
   garageAudio.play('ding');
   message.textContent = 'Mám tlačítko B1. Výtah se otevírá.';
@@ -433,3 +433,12 @@ function draw(time) {
 }
 
 resetPuzzle();
+const checkpoint = balikProgress.checkpoint('B2');
+if (checkpoint === 'carrying' || checkpoint === 'installed') {
+  phase = 'elevator';
+  exitStarted = doorStarted = -Infinity;
+  message.textContent = checkpoint === 'carrying'
+    ? 'Nastup do výtahu a zasaď tlačítko B1.'
+    : 'Garáže jsou hotové. Nastup do výtahu.';
+  updateControls();
+}
