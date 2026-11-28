@@ -94,7 +94,7 @@
 
   const elevator = createElevatorPanel({
     floor: '2',
-    destination: '4',
+    destination: '3',
     onPress: () => restaurantAudio.cue('click')
   });
 
@@ -258,7 +258,7 @@
     if (state.served === total) {
       balikProgress.collect('2');
       const result = state.missed ? `Nedoručených v termínu: ${state.missed}.` : 'Všechno včas!';
-      complete(`Všech ${total} objednávek je u hostů. ${result} Mám tlačítko 4 — teď k výtahu.`);
+      complete(`Všech ${total} objednávek je u hostů. ${result} Mám tlačítko 3 — teď k výtahu.`);
     } else {
       say(`${order.item.name} doručeno. Host děkuje!`);
     }
@@ -472,10 +472,10 @@
       state.y = lift.y;
       state.served = total;
       state.orders = tables.map(() => null);
-      complete(checkpoint === 'carrying' ? 'Mám tlačítko 4. Zacvaknu ho ve výtahu.' : 'Hosté jsou obsloužení. Můžu zpátky do výtahu.');
+      complete(checkpoint === 'carrying' ? 'Mám tlačítko 3. Zacvaknu ho ve výtahu.' : 'Hosté jsou obsloužení. Můžu zpátky do výtahu.');
     } else {
       state.orders = tables.map((_, index) => orderFor(index, 0, index * 3));
-      say('Deset objednávek za tlačítko 4. Čas běží od prvního pohybu. Začnu špagetami pro stůl 1.');
+      say('Deset objednávek za tlačítko 3. Čas běží od prvního pohybu. Začnu špagetami pro stůl 1.');
     }
     carry(null);
     renderTickets();

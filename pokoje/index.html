@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="cs" data-balik-floor="3">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>BALÍČEK | 3 – Hotelové pokoje</title>
+  <script src="../assets/balik-progress.js?v=6"></script>
+  <link rel="stylesheet" href="../assets/game-name.css?v=2">
+  <link rel="stylesheet" href="../assets/balik-ui.css?v=3">
+  <link rel="stylesheet" href="../assets/elevator.css?v=2">
+  <link rel="stylesheet" href="rooms.css?v=1">
+  <link rel="preload" as="image" href="art/hall.webp">
+  <script src="../assets/game-name.js" defer></script>
+  <script src="../assets/balik-sound.js?v=3" defer></script>
+  <script src="../assets/elevator.js?v=7" defer></script>
+  <script src="audio.js?v=1" defer></script>
+  <script src="layouts.js?v=1" defer></script>
+  <script src="rooms.js?v=1" defer></script>
+  <script src="../assets/balik-menu.js?v=7" defer></script>
+</head>
+<body>
+  <main class="room-level" data-floor="3">
+    <header class="floor-header">
+      <button class="floor-control" id="sound-toggle" type="button" aria-label="Zvuk">🔈</button>
+      <h1 class="floor-brand">
+        <span class="game-brand game-brand--floor">
+          <img src="../assets/brand-parcel.png" class="game-brand-parcel" width="120" height="101" alt="">
+          <span class="game-brand-name" data-game-name>BALÍČEK</span>
+        </span>
+        <span class="floor-label">3 – Hotelové pokoje</span>
+      </h1>
+      <button class="floor-control" id="balik-menu-toggle" type="button" aria-label="Otevřít menu hry">☰</button>
+    </header>
+
+    <div class="room-hall">
+      <button type="button" class="hotel-action hall-lift" id="hall-lift" hidden>Otevřít výtah</button>
+    </div>
+
+    <section class="room-progress" aria-label="Stav obchůzky">
+      <strong id="walk-label"></strong>
+      <output id="route-count" aria-live="polite"></output>
+    </section>
+
+    <div class="carpet">
+      <div class="room-map" role="group" aria-label="Mapa hotelového patra" aria-describedby="room-instructions">
+        <div class="room-tiles"></div>
+        <svg class="room-routes" aria-hidden="true"></svg>
+        <div class="room-walkers" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <p id="room-instructions" class="visually-hidden">Spoj vozíky se dveřmi se stejným symbolem. Prstem táhni po políčkách. Na klávesnici použij šipky a Enter. Trasy se nesmějí potkat.</p>
+    <div class="room-dialogue">
+      <span class="room-portrait" aria-hidden="true"></span>
+      <p id="room-line" role="status" data-dialogue-voice="receptionist"></p>
+      <span class="room-reward" aria-label="Tlačítko 4" hidden>4</span>
+    </div>
+
+    <div class="room-controls">
+      <div class="room-edit">
+        <button type="button" class="hotel-action" id="undo-route" disabled>Zpět</button>
+        <button type="button" class="hotel-action" id="reset-walk" disabled>Znovu</button>
+      </div>
+      <button type="button" class="hotel-action hotel-primary room-next" id="next-walk" hidden>Další obchůzka</button>
+    </div>
+    <button type="button" id="reset" hidden>Restartovat patro</button>
+  </main>
+</body>
+</html>

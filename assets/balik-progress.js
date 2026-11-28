@@ -10,7 +10,7 @@ const balikProgress = (() => {
     {id: '0', name: 'Recepce', path: 'recepce/'},
     {id: '1', name: 'Kuchyně', path: 'kuchyne/'},
     {id: '2', name: 'Restaurace', path: 'restaurace/'},
-    {id: '3', name: 'Hotelové pokoje', planned: true},
+    {id: '3', name: 'Hotelové pokoje', path: 'pokoje/', rememberCompletion: true},
     {id: '4', name: 'Prádelna', path: 'pradelna/', rememberCompletion: true},
     {id: '5', name: 'Bazén', path: 'bazen/'},
     {id: '6', name: 'Posilovna'}
@@ -26,8 +26,6 @@ const balikProgress = (() => {
           typeof saved.hasButton === 'boolean' &&
           (saved.completedFloors === undefined ||
             (Array.isArray(saved.completedFloors) && saved.completedFloors.every(id => indexOf(id) >= 0)))) {
-        // The previous release ended at the hotel-room placeholder after completing the restaurant.
-        if (floors[saved.highest].id === '3') return {...saved, highest: indexOf('2'), hasButton: true};
         return saved;
       }
     } catch {}

@@ -1,0 +1,299 @@
+@font-face {
+  font-family: "Hotel Serif";
+  src: url("../kuchyne/art/hotel-serif.ttf") format("truetype");
+  font-display: swap;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  color: #f3d8ad;
+  background: radial-gradient(ellipse at center top, #4d32274b, #1b1515e8 76%),
+    #281b18 url("../assets/elevator-wood.webp") center / cover;
+  font: 15px/1.35 system-ui, sans-serif;
+}
+
+.room-level {
+  display: grid;
+  grid-template-areas: "header" "hall" "progress" "board" "message" "controls";
+  gap: 6px;
+  width: min(100%, 612px);
+  min-width: 0;
+  margin: auto;
+  padding: max(5px, env(safe-area-inset-top)) max(5px, env(safe-area-inset-right))
+    max(5px, env(safe-area-inset-bottom)) max(5px, env(safe-area-inset-left));
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.room-level .floor-header {
+  grid-area: header;
+  padding-block: .35rem;
+  border-radius: 6px;
+}
+.room-level button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+.room-hall {
+  grid-area: hall;
+  position: relative;
+  display: grid;
+  place-items: end center;
+  height: clamp(68px, 27vw, 144px);
+  border: 1px solid #8f623e;
+  border-radius: 6px;
+  background: #322019 url("art/hall.webp") center / cover no-repeat;
+  overflow: hidden;
+}
+.room-hall:has(.hall-lift:not([hidden])) { border-color: #d9a967; }
+.room-progress {
+  grid-area: progress;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  min-height: 30px;
+  padding: 3px 9px;
+  border: 1px solid #946b4b;
+  border-radius: 5px;
+  background: #2c201b;
+}
+.room-progress strong { font: 500 clamp(15px, 4.4vw, 19px)/1.1 "Hotel Serif", Georgia, serif; }
+#route-count { color: #efc98e; font-size: .8rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.carpet {
+  grid-area: board;
+  min-width: 0;
+  width: 100%;
+  padding: 4px;
+  border: 1px solid #c5905c;
+  background:
+    repeating-linear-gradient(45deg, #8e5a3a 0 2px, #4b2926 2px 4px, #ad7446 4px 6px);
+  box-shadow: 0 2px 8px #160e0dd4;
+}
+
+.room-map {
+  isolation: isolate;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  touch-action: none;
+  overflow: hidden;
+  background: #3d2223;
+}
+
+.room-tiles,
+.room-routes,
+.room-walkers {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.room-tiles {
+  display: grid;
+  grid-template-columns: repeat(var(--rooms-side), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rooms-side), minmax(0, 1fr));
+}
+.room-routes, .room-walkers { pointer-events: none; }
+.room-routes { z-index: 1; }
+.room-walkers { z-index: 4; }
+
+.room-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid #2e161b;
+  border-radius: 0;
+  background:
+    radial-gradient(ellipse at 30% 25%, #8b4a4e41, transparent 65%),
+    repeating-linear-gradient(130deg, #683038 0 2px, #71333c 2px 3px, #642e36 3px 5px);
+  box-shadow: inset 0 0 0 1px #b4686333;
+  -webkit-tap-highlight-color: transparent;
+}
+.room-cell.is-threaded {
+  background: color-mix(in srgb, #5e2a31 81%, var(--pair-ink));
+}
+.room-cell:focus-visible {
+  z-index: 4;
+  outline: 2px solid #ffe3a5;
+  outline-offset: -3px;
+}
+.room-cell.is-conflict {
+  z-index: 3;
+  box-shadow: inset 0 0 0 2px #ffb38b;
+  animation: route-conflict .35s ease-out both;
+}
+@keyframes route-conflict {
+  from { background: #ae5145; }
+}
+.room-route {
+  fill: none;
+  stroke: var(--pair-ink);
+  stroke-width: .28;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: .89;
+}
+.room-route.is-current { stroke-width: .34; opacity: 1; }
+
+.room-endpoint {
+  position: absolute;
+  inset: 4%;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  isolation: isolate;
+  pointer-events: none;
+}
+.room-endpoint img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 1px 2px #251313);
+}
+.room-endpoint.cart img { filter: hue-rotate(var(--uniform-tint)) drop-shadow(0 1px 2px #251313); }
+.room-cell:has(.room-endpoint) {
+  background: color-mix(in srgb, #432326 88%, var(--pair-ink));
+}
+.room-mark {
+  position: absolute;
+  left: 50%;
+  top: 78%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 36%;
+  min-width: 14px;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--pair-ink);
+  border-radius: 3px;
+  background: #241713ee;
+  box-shadow: 0 1px 3px #1b0c0ae0;
+  color: var(--pair-ink);
+  font: 800 clamp(12px, 4.2vw, 19px)/1 system-ui, sans-serif;
+}
+.room-endpoint.door .room-mark { top: 40%; }
+.room-map.is-walking .room-endpoint.cart img { opacity: .52; }
+
+.room-walker {
+  position: absolute;
+  width: calc(87% / var(--rooms-side));
+  height: calc(87% / var(--rooms-side));
+  transform: translate(-50%, -60%);
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: hue-rotate(var(--uniform-tint)) drop-shadow(0 2px 2px #21110e);
+}
+
+.room-dialogue {
+  grid-area: message;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 4px 8px;
+  border: 1px solid #b98655;
+  border-radius: 6px;
+  background: #f0d0a4;
+  color: #2e2018;
+}
+.room-dialogue p { flex: 1; margin: 0; font-size: .79rem; font-weight: 650; }
+.room-portrait {
+  width: clamp(29px, 9vw, 44px);
+  aspect-ratio: 1;
+  flex: none;
+  background: url("art/maid.webp") center / contain no-repeat;
+  image-rendering: pixelated;
+}
+.room-reward {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  aspect-ratio: 1;
+  border: 2px solid #8d5829;
+  border-radius: 50%;
+  background: linear-gradient(#f8d392, #bc894c);
+  color: #342415;
+  font: 700 1.1rem/1 "Hotel Serif", Georgia, serif;
+  animation: reward-in .45s ease-out both;
+}
+@keyframes reward-in {
+  from { transform: translateY(7px) scale(.8); opacity: 0; }
+}
+.room-controls { grid-area: controls; }
+.room-edit { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.room-level :is(.room-controls button, .hall-lift) {
+  min-height: 44px;
+  padding: 4px 12px;
+  border: 1px solid #c7945b;
+  border-radius: 6px;
+  color: #f5d6a0;
+  background: linear-gradient(#4d3426, #2a1e19);
+  box-shadow: inset 0 1px #f4c58b38;
+  font: 700 1rem/1.1 "Hotel Serif", Georgia, serif;
+  cursor: pointer;
+}
+.room-level .room-controls button:disabled { opacity: .65; cursor: default; }
+.room-level .room-controls .room-next {
+  width: 100%;
+  color: #3b281a;
+  background: linear-gradient(#f0cc8d, #c38e55);
+}
+.room-level .hall-lift { margin-bottom: 3px; background: #302017ee; }
+
+.visually-hidden {
+  position: absolute;
+  inset: auto auto auto 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (orientation: portrait) and (max-height: 665px) {
+  .room-level { gap: 4px; }
+  .room-level .floor-header { gap: .28rem; padding: .25rem .4rem; }
+  .room-level .floor-header .floor-brand { grid-auto-flow: column; align-items: center; }
+  .room-level .game-brand--floor { width: 86px; --word-size: 14px; --word-size-english: 12px; }
+  .room-level .floor-label { font-size: .7rem; }
+  .room-hall { height: clamp(54px, 18vw, 74px); }
+  .room-dialogue { min-height: 42px; }
+  .room-dialogue p { font-size: .74rem; }
+}
+
+@media (orientation: landscape) and (min-width: 535px) {
+  .room-level {
+    width: min(100%, 1160px);
+    min-height: 100dvh;
+    align-content: center;
+    grid-template-columns: minmax(0, 1fr) clamp(201px, 32vw, 390px);
+    grid-template-areas: "board header" "board hall" "board progress" "board message" "board controls";
+    padding-inline: max(7px, env(safe-area-inset-left)) max(7px, env(safe-area-inset-right));
+  }
+  .carpet { width: min(100%, calc(100dvh - 14px)); place-self: center; }
+  .room-hall { height: clamp(60px, 16dvh, 122px); }
+  .room-level .game-brand--floor { width: min(100%, 124px); --word-size: 19px; --word-size-english: 17px; }
+}
+@media (orientation: landscape) and (min-width: 535px) and (max-height: 345px) {
+  .room-level .game-brand--floor { display: none; }
+  .room-level .floor-header { gap: .28rem; padding-inline: .35rem; }
+  .room-level .floor-label { font-size: .72rem; }
+  .room-progress strong { font-size: 1rem; white-space: nowrap; }
+  .room-dialogue p { font-size: .74rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .room-cell.is-conflict, .room-reward { animation: none; }
+}
