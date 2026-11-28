@@ -9,7 +9,10 @@ const balikProgress = (() => {
     {id: '0', name: 'Recepce', path: 'recepce/'},
     {id: '1', name: 'Kuchyně', path: 'kuchyne/'},
     {id: '2', name: 'Restaurace', path: 'restaurace/'},
-    {id: '3', name: 'Hotelové pokoje'}
+    {id: '3', name: 'Hotelové pokoje', planned: true},
+    {id: '4', name: 'Prádelna', planned: true},
+    {id: '5', name: 'Bazén', path: 'bazen/'},
+    {id: '6', name: 'Posilovna'}
   ];
   const indexOf = id => floors.findIndex(floor => floor.id === id);
 
@@ -19,7 +22,11 @@ const balikProgress = (() => {
       if (typeof saved?.run === 'string' &&
           Number.isInteger(saved.highest) && saved.highest >= 0 && saved.highest < floors.length &&
           Number.isInteger(saved.last) && saved.last >= 0 && saved.last <= saved.highest && floors[saved.last].path &&
-          typeof saved.hasButton === 'boolean') return saved;
+          typeof saved.hasButton === 'boolean') {
+        // The previous release ended at the hotel-room placeholder after completing the restaurant.
+        if (floors[saved.highest].id === '3') return {...saved, highest: indexOf('2'), hasButton: true};
+        return saved;
+      }
     } catch {}
     return null;
   }
@@ -92,7 +99,7 @@ const balikProgress = (() => {
     canVisit: id => canEnter(load(), indexOf(id)),
     isUnlocked(id) {
       const index = indexOf(id);
-      return index >= 0 && index <= (load()?.highest ?? -1);
+      return index >= 0 && !floors[index].planned && index <= (load()?.highest ?? -1);
     },
     start() {
       return save({run: crypto.randomUUID(), highest: 0, last: 0, hasButton: false});
@@ -105,9 +112,10 @@ const balikProgress = (() => {
     install(id, destination) {
       const progress = load();
       const index = indexOf(id);
+      const next = floors.findIndex((floor, position) => position > index && !floor.planned);
       if (progress?.run !== run || !progress?.hasButton ||
-          index !== progress.highest || indexOf(destination) !== index + 1) return false;
-      return save({...progress, highest: index + 1, hasButton: false});
+          index !== progress.highest || next < 0 || floors[next].id !== destination) return false;
+      return save({...progress, highest: next, hasButton: false});
     }
   };
 })();

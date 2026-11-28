@@ -71,7 +71,7 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
       const hasDestination = Boolean(level?.path || (label === destination && onTravel));
       button.disabled = traveling || label === floor || (!pending && (!installed || !hasDestination));
       button.setAttribute('aria-label', pending ? 'Zasadit tlačítko ' + label : installed && !hasDestination
-        ? level.name + ' se připravují' : label === floor
+        ? level.name + ' · připravuje se' : label === floor
         ? 'Aktuální patro ' + label
         : installed ? (label === '0' ? 'Jet do přízemí' : 'Jet do ' + label) : 'Zamčené patro ' + label);
     }

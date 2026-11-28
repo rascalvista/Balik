@@ -80,9 +80,8 @@
 
   const elevator = createElevatorPanel({
     floor: '2',
-    destination: '3',
-    onPress: () => restaurantAudio.cue('click'),
-    onTravel: () => find('#hotel-rooms').showModal()
+    destination: '5',
+    onPress: () => restaurantAudio.cue('click')
   });
 
   function say(message) { line.textContent = message; }
@@ -205,7 +204,7 @@
     restaurantAudio.cue('serve');
     if (state.served === total) {
       balikProgress.collect('2');
-      complete(`Všech šest objednávek je u hostů. Včas doručeno ${state.inTime} z ${total}. Mám tlačítko 3 — teď k výtahu.`);
+      complete(`Všech šest objednávek je u hostů. Včas doručeno ${state.inTime} z ${total}. Mám tlačítko 5 — teď k výtahu.`);
     } else {
       say(`${order.item.name} doručeno. ${inTime ? 'Host děkuje!' : 'Host je obsloužený.'}`);
     }
@@ -408,10 +407,10 @@
       state.y = lift.y;
       state.served = total;
       state.orders = tables.map(() => null);
-      complete(checkpoint === 'carrying' ? 'Mám tlačítko 3. Zacvaknu ho ve výtahu.' : 'Hosté jsou obsloužení. Můžu zpátky do výtahu.');
+      complete(checkpoint === 'carrying' ? 'Mám tlačítko 5. Zacvaknu ho ve výtahu.' : 'Hosté jsou obsloužení. Můžu zpátky do výtahu.');
     } else {
       state.orders = tables.map((_, index) => orderFor(index, 0));
-      say('Šest objednávek a dostanu tlačítko 3. Začnu špagetami z výdeje pro stůl 1.');
+      say('Šest objednávek a dostanu tlačítko 5. Začnu špagetami z výdeje pro stůl 1.');
     }
     carry(null);
     renderTickets();
