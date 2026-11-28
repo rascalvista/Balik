@@ -18,16 +18,30 @@
   const menu = find('#balik-menu-toggle');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const meal = (name, art) => ({name, art, station: 'pass'});
-  const drink = (name, color, goal, fillTime) => ({name, color, goal, fillTime, station: 'bar'});
+  const layer = (name, color, goal, fillTime, tail) => ({name, color, goal, fillTime, tail});
+  const drink = (name, ...layers) => ({name, color: layers[0].color, layers, station: 'bar'});
   const tables = [
-    {name: 'Stůl 1', x: 20.2, y: 68.5, patience: 55, items: [
-      meal('Špagety', 'spaghetti.png'), drink('Citronáda', '#d98e30', [66, 84], 2180)
+    {name: 'Stůl 1', x: 20.2, y: 57.8, patience: 52, items: [
+      meal('Špagety', 'spaghetti.png'),
+      drink('Citronáda', layer('Citronáda', '#d98e30', [73, 87], 2190, 11))
     ]},
-    {name: 'Stůl 2', x: 49.7, y: 68.5, patience: 61, items: [
-      drink('Malinovka', '#b84660', [62, 82], 2240), meal('Steak', 'steak.png')
+    {name: 'Stůl 2', x: 49.7, y: 57.8, patience: 60, items: [
+      drink('Malinovka', layer('Malinovka', '#b84660', [73, 86], 2130, 13)),
+      meal('Steak', 'steak.png')
     ]},
-    {name: 'Stůl 3', x: 79.7, y: 68.5, patience: 68, items: [
-      meal('Rizoto', 'risotto.png'), drink('Ledový čaj', '#9c552e', [72, 89], 2020)
+    {name: 'Stůl 3', x: 79.7, y: 57.8, patience: 67, items: [
+      meal('Rizoto', 'risotto.png'),
+      drink('Ledový čaj', layer('Ledový čaj', '#9c552e', [76, 88], 1980, 9))
+    ]},
+    {name: 'Stůl 4', x: 31.2, y: 83.8, patience: 72, items: [
+      meal('Zeleninová polévka', 'soup.png'),
+      drink('Broskvový fizz', layer('Broskvový fizz', '#cf7840', [72, 86], 1950, 14))
+    ]},
+    {name: 'Stůl 5', x: 68.7, y: 83.8, patience: 82, items: [
+      drink('Hotelová limonáda',
+        layer('Malinový sirup', '#ac3158', [38, 49], 2070, 9),
+        layer('Citrusová soda', '#e9ae42', [77, 89], 1910, 13)),
+      meal('Omeleta', 'omelet.png')
     ]}
   ];
   const pass = {name: 'Výdej', x: 28, y: 34.3, sign: find('[data-station="pass"]')};
@@ -35,8 +49,8 @@
   const lift = {name: 'Výtah', x: 49.7, y: 70.5, sign: liftSign};
   // Coordinates are percentages of the bistro. Collisions use the courier's feet.
   const furniture = [
-    [13.8, 27.2, 38, 64], [43.4, 56.4, 38, 64], [73.1, 86.2, 38, 64],
-    [38.1, 61.9, 73, 100]
+    [15.2, 25.4, 34.5, 54.8], [44.6, 54.8, 34.5, 54.8], [74.8, 85, 34.5, 54.8],
+    [26, 36.5, 61.5, 80], [63.4, 74, 61.5, 80], [38.1, 61.9, 73, 100]
   ];
   const directionRows = [4, 3, 2, 1, 0, 7, 6, 5];
   const turn = Math.PI / 4;
@@ -67,7 +81,7 @@
     const sign = document.createElement('span');
     sign.className = 'table-marker';
     sign.textContent = index + 1;
-    place(sign, table.x, 62.8);
+    place(sign, table.x, table.y - 3.6);
     find('.table-markers').append(sign);
     table.sign = sign;
   }
@@ -99,15 +113,21 @@
     return icon;
   }
 
-  function orderFor(table, step) {
+  function orderFor(table, step, delay = 0) {
     const item = tables[table].items[step];
-    if (item) return {table, item, deadline: state.elapsed + tables[table].patience, step};
-    return null;
+    if (!item) return null;
+    const opens = state.elapsed + delay;
+    return {table, item, opens, deadline: opens + tables[table].patience, step};
+  }
+
+  function isActive(order) {
+    return order && order.opens <= state.elapsed && state.elapsed < order.deadline;
   }
 
   function nextOrder(station) {
-    const options = state.orders.filter(order => order && (!station || order.item.station === station));
-    return options.find(order => order.table === state.selected) ?? options.find(order => order.step === 0) ?? options[0];
+    const options = state.orders.filter(order => isActive(order) && (!station || order.item.station === station));
+    return options.find(order => order.table === state.selected) ??
+      options.reduce((first, order) => !first || order.deadline < first.deadline ? order : first, undefined);
   }
 
   function renderTickets() {
@@ -119,19 +139,23 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'ticket-card';
-      button.disabled = !order;
+      button.disabled = !isActive(order);
       button.setAttribute('aria-pressed', order && index === state.selected ? 'true' : 'false');
       const item = document.createElement('span');
       item.className = 'ticket-item';
       const label = document.createElement('small');
       label.className = 'ticket-table';
       label.textContent = table.name;
-      item.append(label, order ? order.item.name : 'Obslouženo');
+      item.append(label, order ? ' ' + order.item.name : ' Obslouženo');
       if (order) button.append(itemIcon(order.item));
       else button.append(document.createElement('span'));
       button.append(item);
       let bar;
+      let clock;
       if (order) {
+        clock = document.createElement('span');
+        clock.className = 'ticket-clock';
+        button.append(clock);
         const timer = document.createElement('span');
         timer.className = 'ticket-timer';
         timer.setAttribute('aria-hidden', 'true');
@@ -150,14 +174,15 @@
         renderSelection();
         say(`Stůl ${index + 1} si objednal ${order.item.name.toLocaleLowerCase('cs')}. ${order.item.station === 'bar' ? 'Připrav drink u baru.' : 'Vyzvedni jídlo u výdeje.'}`);
       });
-      return {button, bar};
+      return {button, bar, clock};
     });
     renderSelection();
+    updateTimers();
   }
 
   function renderSelection() {
     for (const [index, {button}] of rendered.entries()) {
-      button.setAttribute('aria-pressed', String(Boolean(state.orders[index] && state.selected === index)));
+      button.setAttribute('aria-pressed', String(Boolean(isActive(state.orders[index]) && state.selected === index)));
     }
     const order = state.held ?? nextOrder();
     pass.sign.classList.toggle('is-target', !state.held && order?.item.station === 'pass');
@@ -168,14 +193,44 @@
     }
   }
 
+  function secondsUntil(order) {
+    return Math.max(0, Math.ceil(order.deadline - state.elapsed));
+  }
+
   function updateTimers() {
+    let selectionChanged = false;
     for (const [index, order] of state.orders.entries()) {
       if (!order) continue;
-      const ratio = Math.max(0, (order.deadline - state.elapsed) / tables[index].patience);
-      const {button, bar} = rendered[index];
+      const {button, bar, clock} = rendered[index];
+      const active = order.opens <= state.elapsed;
+      const remaining = order.deadline - state.elapsed;
+      const ratio = active ? Math.max(0, remaining / tables[index].patience) : 0;
       bar.style.transform = `scaleX(${ratio.toFixed(3)})`;
-      button.classList.toggle('is-late', ratio < .23);
+      button.classList.toggle('is-late', active && remaining <= 12);
+      const label = active ? `${secondsUntil(order)} s` : `Za ${Math.ceil(order.opens - state.elapsed)} s`;
+      if (clock.textContent !== label) clock.textContent = label;
+      if (button.disabled === active) {
+        button.disabled = !active;
+        selectionChanged = true;
+      }
+      if (pourGame.isPreparing(order)) pourGame.updateTime(secondsUntil(order));
     }
+    if (selectionChanged) renderSelection();
+  }
+
+  function replaceExpiredOrders() {
+    const expired = state.orders.filter(order => order && order.deadline <= state.elapsed);
+    if (!expired.length) return;
+    state.missed += expired.length;
+    for (const order of expired) {
+      state.orders[order.table] = orderFor(order.table, order.step, 5);
+      if (pourGame.isPreparing(order)) pourGame.close();
+      if (state.held === order) carry(null);
+    }
+    renderTickets();
+    const tableNumber = expired[0].table + 1;
+    say(expired.length === 1 ? `Stůl ${tableNumber} má po termínu. Za chvíli si objedná znovu.`
+      : 'Několik stolů má po termínu. Objednávky se za chvíli obnoví.');
   }
 
   function carry(order) {
@@ -194,19 +249,18 @@
       say(order ? `Tohle patří ke stolu ${order.table + 1}.` : `Vyzvedni objednávku pro stůl ${tableIndex + 1}.`);
       return;
     }
-    const inTime = state.elapsed <= order.deadline;
-    if (inTime) state.inTime++;
     state.served++;
     state.orders[tableIndex] = orderFor(tableIndex, order.step + 1);
-    state.selected = state.orders.find(ticket => ticket?.step === 0)?.table ?? state.orders.find(Boolean)?.table;
+    state.selected = state.orders.reduce((first, ticket) => isActive(ticket) && (!first || ticket.deadline < first.deadline) ? ticket : first, undefined)?.table;
     carry(null);
     renderTickets();
     restaurantAudio.cue('serve');
     if (state.served === total) {
       balikProgress.collect('2');
-      complete(`Všech šest objednávek je u hostů. Včas doručeno ${state.inTime} z ${total}. Mám tlačítko 4 — teď k výtahu.`);
+      const result = state.missed ? `Nedoručených v termínu: ${state.missed}.` : 'Všechno včas!';
+      complete(`Všech ${total} objednávek je u hostů. ${result} Mám tlačítko 4 — teď k výtahu.`);
     } else {
-      say(`${order.item.name} doručeno. ${inTime ? 'Host děkuje!' : 'Host je obsloužený.'}`);
+      say(`${order.item.name} doručeno. Host děkuje!`);
     }
   }
 
@@ -236,6 +290,7 @@
       enterLift();
       return;
     }
+    state.started = true;
     const station = nearby === pass ? 'pass' : nearby === bar ? 'bar' : undefined;
     if (!station) {
       serve(tables.indexOf(nearby));
@@ -253,6 +308,7 @@
     if (station === 'bar') {
       stopInput();
       pourGame.open(order);
+      pourGame.updateTime(secondsUntil(order));
       return;
     }
     carry(order);
@@ -343,6 +399,10 @@
     }
   });
   document.addEventListener('keyup', event => keys.delete(key(event)));
+  document.addEventListener('visibilitychange', () => {
+    time = undefined;
+    if (document.hidden) stopInput();
+  });
   window.addEventListener('blur', stopInput);
   window.addEventListener('pagehide', stopInput);
   menu.addEventListener('click', stopInput);
@@ -379,14 +439,18 @@
   }
 
   function update(timestamp) {
-    const delta = time === undefined ? 0 : Math.min(.047, (timestamp - time) / 1000);
+    const elapsed = time === undefined ? 0 : (timestamp - time) / 1000;
     time = timestamp;
-    if (!blocked()) {
-      drawCourier(delta, direction());
+    const canMove = !blocked();
+    if (canMove) {
+      const moving = direction();
+      if (moving >= 0 && !state.done) state.started = true;
+      drawCourier(Math.min(.047, elapsed), moving);
       refreshAction();
     }
-    if (state.served && !state.done && (!blocked() || (pourGame.isOpen() && !document.hidden))) {
-      state.elapsed += delta;
+    if (state.started && !state.done && (canMove || (pourGame.isOpen() && !document.hidden))) {
+      state.elapsed += elapsed;
+      replaceExpiredOrders();
       updateTimers();
     }
     requestAnimationFrame(update);
@@ -400,7 +464,8 @@
     elevator.reset();
     liftDoors.hidden = liftSign.hidden = true;
     liftDoors.classList.remove('is-open');
-    state = {x: 34.8, y: 69.7, facing: 0, step: 0, elapsed: 0, held: null, orders: [], selected: 0, served: 0, inTime: 0, done: false};
+    state = {x: 38, y: 57.6, facing: 0, step: 0, elapsed: 0, held: null, orders: [], selected: 0,
+      served: 0, missed: 0, started: false, done: false};
     const checkpoint = resume ? balikProgress.checkpoint('2') : 'playing';
     if (checkpoint === 'carrying' || checkpoint === 'installed') {
       state.x = lift.x;
@@ -409,12 +474,11 @@
       state.orders = tables.map(() => null);
       complete(checkpoint === 'carrying' ? 'Mám tlačítko 4. Zacvaknu ho ve výtahu.' : 'Hosté jsou obsloužení. Můžu zpátky do výtahu.');
     } else {
-      state.orders = tables.map((_, index) => orderFor(index, 0));
-      say('Šest objednávek a dostanu tlačítko 4. Začnu špagetami z výdeje pro stůl 1.');
+      state.orders = tables.map((_, index) => orderFor(index, 0, index * 3));
+      say('Deset objednávek za tlačítko 4. Čas běží od prvního pohybu. Začnu špagetami pro stůl 1.');
     }
     carry(null);
     renderTickets();
-    updateTimers();
     drawCourier(0, -1);
   }
 

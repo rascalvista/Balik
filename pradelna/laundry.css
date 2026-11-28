@@ -73,13 +73,13 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   align-content: center;
-  gap: 2.2cqw;
+  gap: 1.7cqw;
 }
 .laundry-basket {
   position: relative;
-  width: calc((100% + 2.2cqw) / var(--columns) - 2.2cqw);
+  width: calc((100% + 1.7cqw) / var(--columns) - 1.7cqw);
   max-width: 23cqw;
-  height: calc((100% - 2.2cqw) / 2);
+  height: calc((100% - 1.7cqw) / 2);
   min-width: 0;
   padding: 0;
   border: 1px solid #bd8753;
@@ -154,6 +154,10 @@ body {
 .towel[data-color="2"] { --fabric: #deb03f; --light: #f5d67a; --edge: #8b5926; }
 .towel[data-color="3"] { --fabric: #9560c1; --light: #cdaaef; --edge: #573779; }
 .towel[data-color="4"] { --fabric: #74a44e; --light: #abd383; --edge: #456a33; }
+
+.towel[data-color="5"] { --fabric: #406fbb; --light: #92b5f2; --edge: #304582; }
+.towel[data-color="6"] { --fabric: #d66faa; --light: #f2a8cc; --edge: #8e426e; }
+.towel[data-color="7"] { --fabric: #e7d6af; --light: #fff6de; --edge: #8c704d; color: #4b3627; text-shadow: none; }
 
 .moving-towels {
   position: fixed;

@@ -2,17 +2,25 @@
   'use strict';
 
   const capacity = 4;
+  const originalLoads = 3;
   const loads = [
     [[2, 0, 1, 1], [2, 1, 0, 0], [0, 2, 2, 1], [], []],
     [[2, 1, 0, 3], [2, 2, 0, 2], [1, 3, 3, 3], [1, 0, 1, 0], [], []],
-    [[0, 1, 2, 4], [4, 1, 2, 0], [2, 4, 1, 3], [1, 0, 3, 2], [3, 4, 3, 0], [], []]
+    [[0, 1, 2, 4], [4, 1, 2, 0], [2, 4, 1, 3], [1, 0, 3, 2], [3, 4, 3, 0], [], []],
+    [[0, 0, 0, 4], [3, 2, 3, 4], [5, 2, 1, 1], [4, 5, 3, 1], [2, 1, 0, 5], [5, 2, 3, 4], [], []],
+    [[4, 4, 3, 2], [5, 3, 1, 4], [5, 1, 5, 0], [3, 0, 2, 0], [0, 5, 2, 1], [1, 4, 2, 3], [], []],
+    [[6, 5, 1, 3], [2, 0, 4, 4], [3, 2, 4, 5], [6, 5, 0, 4], [1, 2, 3, 0], [6, 1, 1, 3], [6, 5, 2, 0], [], []],
+    [[0, 1, 0, 3], [5, 4, 2, 5], [1, 2, 7, 4], [5, 7, 2, 0], [6, 3, 4, 0], [7, 3, 2, 6], [4, 7, 5, 1], [1, 6, 6, 3], [], []]
   ];
   const towels = [
     {name: 'červená', mark: '◆'},
     {name: 'tyrkysová', mark: '●'},
     {name: 'zlatá', mark: '═'},
     {name: 'fialová', mark: '✦'},
-    {name: 'zelená', mark: '▲'}
+    {name: 'zelená', mark: '▲'},
+    {name: 'modrá', mark: '■'},
+    {name: 'růžová', mark: '+'},
+    {name: 'krémová', mark: '○'}
   ];
   const find = selector => document.querySelector(selector);
   const board = find('.laundry-board');
@@ -42,14 +50,14 @@
     for (const key of ['sessionStorage', 'localStorage']) {
       try {
         const saved = JSON.parse(window[key].getItem(saveKey));
-        if (saved?.run === run && Number.isInteger(saved.set) && loads[saved.set]) return saved.set;
+        if (saved?.run === run && Number.isInteger(saved.set) && saved.set >= 0 && saved.set <= loads.length) return saved;
       } catch {}
     }
-    return 0;
+    return {set: 0};
   }
 
   function saveSet(set) {
-    const data = JSON.stringify({run, set});
+    const data = JSON.stringify({run, set, version: 2});
     try {
       localStorage.setItem(saveKey, data);
       try { sessionStorage.removeItem(saveKey); } catch {}
@@ -111,7 +119,7 @@
   }
 
   function createBaskets() {
-    board.style.setProperty('--columns', bins.length > 6 ? 4 : 3);
+    board.style.setProperty('--columns', Math.ceil(bins.length / 2));
     board.replaceChildren(...bins.map((_, index) => {
       const button = document.createElement('button');
       button.type = 'button';
@@ -160,6 +168,7 @@
       return;
     }
     phase = 'finished';
+    saveSet(loads.length);
     balikProgress.collect('4');
     tell(balikProgress.isUnlocked('5')
       ? 'Všechny ručníky jsou roztříděné. Můžu zpátky do výtahu.'
@@ -261,6 +270,11 @@
   });
 
   const checkpoint = balikProgress.checkpoint('4');
-  const finished = checkpoint === 'carrying' || checkpoint === 'installed';
-  startSet(finished ? loads.length - 1 : loadSet(), finished);
+  const {set: saved, version} = loadSet();
+  const finished = saved === loads.length;
+  // Earlier saves earned the elevator button after the first three loads.
+  const earnedEarlier = !version && (checkpoint === 'carrying' || checkpoint === 'installed');
+  const nextLoad = earnedEarlier ? originalLoads : saved;
+  if (finished) balikProgress.collect('4');
+  startSet(finished ? loads.length - 1 : nextLoad, finished);
 })();

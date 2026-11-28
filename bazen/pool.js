@@ -2,6 +2,7 @@
   'use strict';
 
   // Patrols contain inclusive endpoints and an initial step in the out-and-back cycle.
+  const originalCourses = 3;
   const courses = [
     {
       map: [
@@ -38,6 +39,18 @@
         '.#.S##.'
       ],
       patrols: [[0, 5, 5, 5, 2], [1, 1, 1, 4, 2], [2, 3, 6, 3, 1], [5, 0, 5, 3, 4]]
+    },
+    {
+      map: ['#.#G...', '...#...', '...##..', '#......', '...#.#.', '.......', '...S.##'],
+      patrols: [[0, 5, 5, 5, 3], [1, 1, 1, 4, 4], [2, 3, 6, 3, 2], [5, 0, 5, 3, 5], [4, 1, 6, 1, 0]]
+    },
+    {
+      map: ['.##G...', '...#.##', '.#.....', '.#.##..', '.......', '#...#.#', '#.#S..#'],
+      patrols: [[0, 4, 4, 4, 0], [2, 2, 6, 2, 6], [0, 0, 0, 3, 5], [5, 3, 5, 6, 4], [1, 5, 3, 5, 1], [4, 0, 6, 0, 0]]
+    },
+    {
+      map: ['...G..#', '..###..', '#.#.#..', '#......', '..##.##', '.......', '.#.S...'],
+      patrols: [[0, 5, 5, 5, 2], [1, 1, 1, 4, 3], [2, 3, 6, 3, 3], [5, 0, 5, 3, 4], [4, 6, 6, 6, 0], [0, 0, 2, 0, 1]]
     }
   ];
   const directions = {up: [0, -1], left: [-1, 0], down: [0, 1], right: [1, 0], wait: [0, 0]};
@@ -82,13 +95,13 @@
   function savedCourse() {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey));
-      if (saved?.run === run && Number.isInteger(saved.index) && courses[saved.index]) return saved.index;
+      if (saved?.run === run && Number.isInteger(saved.index) && saved.index >= 0 && saved.index <= courses.length) return saved;
     } catch {}
-    return 0;
+    return {index: 0};
   }
 
   function saveCourse(value) {
-    try { localStorage.setItem(storageKey, JSON.stringify({run, index: value})); } catch {}
+    try { localStorage.setItem(storageKey, JSON.stringify({run, index: value, version: 2})); } catch {}
   }
 
   function keyFor(x,y) { return y * count + x; }
@@ -220,6 +233,7 @@
     } else if (cellAt(x,y).type === 'G') {
       poolAudio.cue('ding');
       if (index + 1 === courses.length) {
+        saveCourse(courses.length);
         balikProgress.collect('5');
         phase = 'finished';
         tell('Balíček je suchý a všechny dráhy za mnou. Mám tlačítko 6!');
@@ -320,6 +334,11 @@
     setCourse(0);
   });
   const checkpoint = balikProgress.checkpoint('5');
-  const finished = checkpoint === 'carrying' || checkpoint === 'installed';
-  setCourse(finished ? courses.length - 1 : savedCourse(), finished);
+  const {index: saved, version} = savedCourse();
+  const finished = saved === courses.length;
+  // Earlier saves earned the elevator button after the first three courses.
+  const earnedEarlier = !version && (checkpoint === 'carrying' || checkpoint === 'installed');
+  const nextCourse = earnedEarlier ? originalCourses : saved;
+  if (finished) balikProgress.collect('5');
+  setCourse(finished ? courses.length - 1 : nextCourse, finished);
 })();

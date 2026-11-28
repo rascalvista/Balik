@@ -78,9 +78,9 @@ body {
   align-items: center;
   gap: 0 .24rem;
   width: 100%;
-  min-height: 49px;
+  min-height: 55px;
   height: 100%;
-  padding: 4px 4px 6px;
+  padding: 3px 4px 6px;
   border: 1px solid #956b47;
   border-radius: 5px;
   background: linear-gradient(#efdcb7, #d8b788);
@@ -95,6 +95,13 @@ body {
 .ticket-card:disabled { color: #755d4e; background: #c5af93; cursor: default; }
 .ticket-item { overflow-wrap: anywhere; }
 .ticket-table { display: block; color: #523c2a; font-size: .63rem; padding-bottom: 2px; }
+.ticket-clock {
+  grid-column: 2;
+  color: #4d3c30;
+  font-size: .68rem;
+  font-variant-numeric: tabular-nums;
+}
+.ticket-card.is-late .ticket-clock { color: #a02420; }
 .ticket-timer {
   position: absolute;
   inset: auto 3px 2px;
@@ -118,7 +125,7 @@ body {
   overflow: hidden;
   border: 1px solid #a07048;
   border-radius: 7px;
-  background: #553925 url("art/bistro.webp") center / 100% 100% no-repeat;
+  background: #553925 url("art/bistro.webp?v=2") center / 100% 100% no-repeat;
   box-shadow: 0 4px 12px #090605ad;
 }
 
@@ -305,6 +312,18 @@ body {
 
 #pour-panel { max-width: 365px; }
 .pour-content { display: grid; justify-items: center; text-align: center; }
+.pour-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .4rem;
+  width: 100%;
+  padding: 0 .1rem .3rem;
+  color: #e6c799;
+  font: 700 .75rem/1.15 system-ui, sans-serif;
+}
+#pour-time { white-space: nowrap; font-variant-numeric: tabular-nums; }
+#pour-time.is-late { color: #ff9e86; }
 .pour-content p { margin: .15rem 0 .58rem; }
 .glass-meter {
   position: relative;
@@ -324,6 +343,12 @@ body {
   background: linear-gradient(100deg, #fff5, transparent 25%), var(--drink-color);
   border-top: 2px solid #fff3bb;
 }
+.glass-base {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--base-fill, 0%);
+  background: linear-gradient(100deg, #fff5, transparent 25%), var(--base-color);
+}
 .glass-goal {
   position: absolute;
   inset: auto 0 var(--goal-low) 0;
@@ -334,6 +359,7 @@ body {
 .pour-message { min-height: 1.2em; padding-top: .35rem; color: #ffd994; font-size: .84rem; }
 #pour-hold { touch-action: none; user-select: none; -webkit-touch-callout: none; }
 #pour-hold.is-pouring { filter: brightness(1.16); }
+#pour-hold.is-settling { opacity: .7; }
 
 @media (orientation: portrait) and (min-height: 680px) {
   .restaurant { min-height: min(100dvh, 900px); grid-template-rows: auto auto auto auto 1fr; }
@@ -346,10 +372,30 @@ body {
   }
 }
 
+@media (orientation: portrait) and (max-height: 679px) {
+  .restaurant { gap: 5px; }
+  .restaurant .floor-header { gap: .35rem; padding: .3rem .4rem; }
+  .restaurant .floor-header .floor-brand { grid-auto-flow: column; align-items: center; }
+  .restaurant .game-brand--floor { width: 84px; --word-size: 13px; }
+  .restaurant .floor-label { font-size: .7rem; }
+  .ticket-card {
+    grid-template-columns: 18px minmax(0, 1fr);
+    min-height: 46px;
+    padding-block: 2px 5px;
+    font-size: .67rem;
+  }
+  .ticket-card .item-icon { width: 18px; height: 17px; }
+  .ticket-table, .ticket-clock { font-size: .62rem; }
+  .restaurant-status { grid-template-columns: 23px minmax(0, 1fr); min-height: 40px; padding-block: 4px; }
+  .restaurant-status p { font-size: .73rem; }
+  .service-stick { width: 74px; }
+  .service-action { min-height: 53px; }
+}
+
 @media (orientation: landscape) and (min-width: 540px) {
   .restaurant {
     width: min(100%, 1440px);
-    grid-template-columns: minmax(0, 1fr) clamp(192px, 29vw, 300px);
+    grid-template-columns: minmax(0, 1fr) clamp(212px, 30vw, 330px);
     grid-template-areas: "bistro header" "bistro tickets" "bistro status" "bistro action";
     padding-inline: max(10px, env(safe-area-inset-left)) max(10px, env(safe-area-inset-right));
     align-content: center;
@@ -358,26 +404,41 @@ body {
   .restaurant .floor-header { padding-block: .33rem; }
   .restaurant .game-brand--floor { width: min(100%, 128px); --word-size: 19px; }
   .bistro { width: min(100%, calc((100dvh - 24px) * 1.5)); place-self: center; }
-  .restaurant-tickets { grid-template-columns: minmax(0, 1fr); }
-  .ticket-card { min-height: 38px; padding-block: 3px 6px; font-size: .77rem; }
-  .ticket-table { display: inline; margin-right: .45em; }
+  .restaurant-tickets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ticket-card {
+    grid-template-columns: 19px minmax(0, 1fr);
+    min-height: 40px;
+    padding-block: 2px 5px;
+    font-size: .68rem;
+  }
+  .ticket-card .item-icon { width: 19px; height: 18px; }
+  .ticket-table { font-size: .6rem; }
+  .ticket-clock { font-size: .63rem; }
   .restaurant-status { min-height: 44px; }
   .service-controls { display: contents; }
   .service-stick { grid-area: bistro; align-self: end; justify-self: start; margin: 0 0 7px 7px; width: clamp(76px, 14vw, 104px); }
   .service-action { grid-area: action; width: 100%; min-height: 48px; }
 }
 
-@media (orientation: landscape) and (min-width: 540px) and (max-height: 345px) {
+@media (orientation: landscape) and (min-width: 540px) and (max-height: 420px) {
   .restaurant { gap: 5px; }
   .restaurant .floor-header { padding-block: .24rem; }
   .restaurant .game-brand--floor { display: none; }
   .restaurant .floor-label { font-size: .78rem; }
-  .ticket-card { min-height: 31px; }
-  .ticket-card .item-icon { width: 20px; height: 19px; }
+  .restaurant-tickets { gap: 3px; }
+  .ticket-card { min-height: 38px; }
   .ticket-panel { padding-block: 4px; }
-  .restaurant-status { grid-template-columns: 23px minmax(0, 1fr); padding-block: 4px; }
-  .restaurant-status p { font-size: .72rem; line-height: 1.24; }
+  .ticket-heading { margin-bottom: 3px; }
+  .ticket-heading h2 { font-size: 15px; }
+  .restaurant-status { grid-template-columns: 23px minmax(0, 1fr); min-height: 36px; padding-block: 4px; }
+  .restaurant-status p { font-size: .7rem; line-height: 1.2; }
   .service-action { min-height: 44px; }
+}
+
+@media (orientation: landscape) and (min-width: 540px) and (max-height: 345px) {
+  .restaurant { grid-template-areas: "status header" "bistro tickets" "bistro action"; }
+  .bistro { width: min(100%, calc((100dvh - 75px) * 1.5)); }
+  .ticket-table { padding-bottom: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
