@@ -22,6 +22,8 @@ Restaurace používá [Bossa Antigua](https://incompetech.com/music/royalty-free
 
 Bazén používá [Chee Zee Beach](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100686) od Kevina MacLeoda (incompetech.com, ISRC USUAN1100686) pod licencí [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). `pool-chee-zee-beach.mp3` je ztlumený výřez upravený pro smyčku. `pool-splash.mp3` je syntetizovaný pro hru.
 
+Prádelna používá [Easy Lemon](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1200076) od Kevina MacLeoda (incompetech.com, ISRC USUAN1200076) pod licencí [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). `laundry-easy-lemon.mp3` je ztlumený výřez upravený pro smyčku. `laundry-fold.mp3` je syntetizovaný zvuk pro hru.
+
 Titulní smyčka `title-rocknroll.mp3` je 8bitová úprava úvodního riffu včetně jeho vyšší polohy a závěrečného obratu ze skladby [Rock’n’rollová modlitba](https://www.supraphonline.cz/album/175252-best-of/cd?trackId=2069588) od Ivana Hlase, v původní nahrávce v podání Jana Kalouska. Pro BALÍČEK byla nově syntetizována a použita se souhlasem k úpravě a použití ve hře.
 
 Bublání, smažení a výdejní zvonek jsou syntetizované pro hru. Hlasové zvuky dialogů generuje Web Audio přímo při hraní.

@@ -10,7 +10,7 @@ const balikProgress = (() => {
     {id: '1', name: 'Kuchyně', path: 'kuchyne/'},
     {id: '2', name: 'Restaurace', path: 'restaurace/'},
     {id: '3', name: 'Hotelové pokoje', planned: true},
-    {id: '4', name: 'Prádelna', planned: true},
+    {id: '4', name: 'Prádelna', path: 'pradelna/', rememberCompletion: true},
     {id: '5', name: 'Bazén', path: 'bazen/'},
     {id: '6', name: 'Posilovna'}
   ];
@@ -22,7 +22,9 @@ const balikProgress = (() => {
       if (typeof saved?.run === 'string' &&
           Number.isInteger(saved.highest) && saved.highest >= 0 && saved.highest < floors.length &&
           Number.isInteger(saved.last) && saved.last >= 0 && saved.last <= saved.highest && floors[saved.last].path &&
-          typeof saved.hasButton === 'boolean') {
+          typeof saved.hasButton === 'boolean' &&
+          (saved.completedFloors === undefined ||
+            (Array.isArray(saved.completedFloors) && saved.completedFloors.every(id => indexOf(id) >= 0)))) {
         // The previous release ended at the hotel-room placeholder after completing the restaurant.
         if (floors[saved.highest].id === '3') return {...saved, highest: indexOf('2'), hasButton: true};
         return saved;
@@ -86,7 +88,10 @@ const balikProgress = (() => {
     const progress = load();
     const index = indexOf(id);
     if (!canEnter(progress, index)) return 'locked';
-    if (index < progress.highest) return 'installed';
+    if (index < progress.highest) {
+      const needsCompletion = floors[index].rememberCompletion && !progress.completedFloors?.includes(id);
+      return needsCompletion ? 'playing' : 'installed';
+    }
     return progress.hasButton ? 'carrying' : 'playing';
   }
 
@@ -106,8 +111,14 @@ const balikProgress = (() => {
     },
     collect(id) {
       const progress = load();
-      if (progress?.run !== run || indexOf(id) !== progress?.highest) return;
-      save({...progress, hasButton: true});
+      const index = indexOf(id);
+      if (progress?.run !== run || !canEnter(progress, index)) return;
+      const updated = {...progress};
+      if (floors[index].rememberCompletion && !progress.completedFloors?.includes(id)) {
+        updated.completedFloors = [...(progress.completedFloors ?? []), id];
+      }
+      if (index === progress.highest) updated.hasButton = true;
+      if (updated.completedFloors !== progress.completedFloors || updated.hasButton !== progress.hasButton) save(updated);
     },
     install(id, destination) {
       const progress = load();
