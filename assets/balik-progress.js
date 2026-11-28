@@ -3,6 +3,7 @@
 const balikProgress = (() => {
   const base = new URL('../', document.currentScript.src);
   const key = 'balik.progress.v1';
+  const unlockAllFloors = true;
   const floors = [
     {id: 'B2', name: 'Garáže', path: 'b2/'},
     {id: 'B1', name: 'Strojovna', path: 'b1/'},
@@ -56,8 +57,13 @@ const balikProgress = (() => {
   const run = load()?.run;
   const home = base.href;
 
+  function isUnlocked(progress, index) {
+    const floor = floors[index];
+    return Boolean(floor && !floor.planned && index <= (progress?.highest ?? -1));
+  }
+
   function canEnter(progress, index) {
-    return Boolean(progress && floors[index]?.path && index <= progress.highest);
+    return Boolean(floors[index]?.path && (unlockAllFloors || isUnlocked(progress, index)));
   }
 
   function enter() {
@@ -67,11 +73,12 @@ const balikProgress = (() => {
       location.replace(home);
       return;
     }
+    if (!progress) return;
     if (progress.run !== run) {
       location.reload();
       return;
     }
-    if (progress.last !== roomIndex) save({...progress, last: roomIndex});
+    if (roomIndex <= progress.highest && progress.last !== roomIndex) save({...progress, last: roomIndex});
   }
 
   if (room) {
@@ -88,6 +95,7 @@ const balikProgress = (() => {
     const progress = load();
     const index = indexOf(id);
     if (!canEnter(progress, index)) return 'locked';
+    if (!progress || index > progress.highest) return 'playing';
     if (index < progress.highest) {
       const needsCompletion = floors[index].rememberCompletion && !progress.completedFloors?.includes(id);
       return needsCompletion ? 'playing' : 'installed';
@@ -102,17 +110,14 @@ const balikProgress = (() => {
     checkpoint,
     floorUrl: id => new URL(floors[indexOf(id)].path, base).href,
     canVisit: id => canEnter(load(), indexOf(id)),
-    isUnlocked(id) {
-      const index = indexOf(id);
-      return index >= 0 && !floors[index].planned && index <= (load()?.highest ?? -1);
-    },
+    isUnlocked: id => isUnlocked(load(), indexOf(id)),
     start() {
       return save({run: crypto.randomUUID(), highest: 0, last: 0, hasButton: false});
     },
     collect(id) {
       const progress = load();
       const index = indexOf(id);
-      if (progress?.run !== run || !canEnter(progress, index)) return;
+      if (!progress || progress.run !== run || index > progress.highest || !canEnter(progress, index)) return;
       const updated = {...progress};
       if (floors[index].rememberCompletion && !progress.completedFloors?.includes(id)) {
         updated.completedFloors = [...(progress.completedFloors ?? []), id];

@@ -64,18 +64,19 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
   function syncButtons() {
     const checkpoint = balikProgress.checkpoint(floor);
     for (const [label, button] of floorButtons) {
-      const pending = label === destination && checkpoint === 'carrying';
       const installed = balikProgress.isUnlocked(label);
-      button.classList.toggle('empty-slot', !installed);
+      const pending = label === destination && checkpoint === 'carrying' && !installed;
+      const available = installed || (!pending && balikProgress.canVisit(label));
+      button.classList.toggle('empty-slot', !available);
       const level = balikProgress.floors.find(({id}) => id === label);
       const hasDestination = Boolean(level?.path || (label === destination && onTravel));
-      button.disabled = traveling || label === floor || (!pending && (!installed || !hasDestination));
-      button.setAttribute('aria-label', pending ? 'Zasadit tlačítko ' + label : installed && !hasDestination
+      button.disabled = traveling || label === floor || (!pending && (!available || !hasDestination));
+      button.setAttribute('aria-label', pending ? 'Zasadit tlačítko ' + label : available && !hasDestination
         ? level.name + ' · připravuje se' : label === floor
         ? 'Aktuální patro ' + label
-        : installed ? (label === '0' ? 'Jet do přízemí' : 'Jet do ' + label) : 'Zamčené patro ' + label);
+        : available ? (label === '0' ? 'Jet do přízemí' : 'Jet do ' + label) : 'Zamčené patro ' + label);
     }
-    instruction.textContent = checkpoint === 'carrying'
+    instruction.textContent = checkpoint === 'carrying' && !balikProgress.isUnlocked(destination)
       ? 'Zasaď tlačítko ' + destination + ' do panelu.'
       : 'Vyber patro.';
   }
@@ -121,7 +122,7 @@ function createElevatorPanel({floor, destination, onPress, onTravel}) {
       }
       return;
     }
-    if (balikProgress.isUnlocked(label)) travel(label, button);
+    if (balikProgress.canVisit(label) || balikProgress.isUnlocked(label)) travel(label, button);
   }
 
   openDoor.addEventListener('click', () => {
