@@ -20,22 +20,23 @@
   const run = balikProgress.load()?.run ?? null;
   const storageKey = 'balik.room-walk.v1';
   const xmlns = 'http://www.w3.org/2000/svg';
-  const uniforms = [
-    ['■', 'tyrkysový čtverec', '#81dfd1', 0],
-    ['◆', 'růžový kosočtverec', '#f193a8', -13],
-    ['●', 'zlatý kruh', '#f5cb72', 14],
-    ['▲', 'zelený trojúhelník', '#b6da86', -19],
-    ['✦', 'fialová hvězda', '#c6abf1', 20],
-    ['✚', 'modrý kříž', '#8ebeff', 8],
-    ['☾', 'oranžový měsíc', '#f9a572', -8]
+  const colors = [
+    {name: 'tyrkysová', ink: '#5dd9c6'},
+    {name: 'růžová', ink: '#f47faa'},
+    {name: 'žlutá', ink: '#f2d059'},
+    {name: 'zelená', ink: '#9bd767'},
+    {name: 'fialová', ink: '#bc93ef'},
+    {name: 'modrá', ink: '#75afff'},
+    {name: 'oranžová', ink: '#ff985e'}
   ];
   const prompts = [
-    '„Já se s ní na chodbě nepotkám!“ Spoj každý vozík se dveřmi se stejným symbolem.',
+    '„Já se s ní na chodbě nepotkám!“ Spoj každý vozík se dveřmi stejné barvy.',
     'Větší patro, stejná dohoda. Každá pokojská potřebuje vlastní cestu.',
     'Nech volný průchod i kolegyním. Některá zkratka je může zablokovat.',
     'Jedna pokojská: „Já si klidně zajdu, hlavně když mi uhne.“',
     'Poslední obchůzka. Až bude prádlo na vozících, půjde do prádelny.'
   ];
+  const handoff = '„Tady máš tlačítko 4. A teď ještě do prádelny. Tam si taky mákneš!“';
   const arrows = {ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1]};
 
   let round;
@@ -102,7 +103,7 @@
     }
     for (const [cell, tile] of cells.entries()) {
       const owner = endpoints.get(cell) ?? claims.get(cell);
-      const color = uniforms[owner]?.[2] ?? '';
+      const color = colors[owner]?.ink ?? '';
       tile.classList.toggle('is-threaded', claims.has(cell));
       tile.style.setProperty('--pair-ink', color);
     }
@@ -111,6 +112,21 @@
     if (routeCount.textContent !== status) routeCount.textContent = status;
     undo.disabled = phase !== 'drawing' || !history.length || Boolean(stroke);
     resetWalk.disabled = phase !== 'drawing' || !routes.some(path => path.length);
+  }
+
+  function sprite(src) {
+    const image = new Image();
+    image.src = src;
+    image.alt = '';
+    image.draggable = false;
+    return image;
+  }
+
+  function accent(className) {
+    const part = document.createElement('span');
+    part.className = className;
+    part.setAttribute('aria-hidden', 'true');
+    return part;
   }
 
   function makeCell(cell) {
@@ -123,21 +139,12 @@
     let label = `Chodba, řádek ${cellY(cell) + 1}, sloupec ${cellX(cell) + 1}`;
     if (index !== undefined) {
       const cart = pairs[index][0] === cell;
-      const [symbol, name, , tint] = uniforms[index];
       const endpoint = document.createElement('span');
-      const art = new Image();
-      const mark = document.createElement('span');
       endpoint.className = 'room-endpoint ' + (cart ? 'cart' : 'door');
-      endpoint.style.setProperty('--uniform-tint', tint + 'deg');
-      art.src = cart ? 'art/cart.webp' : 'art/door.webp';
-      art.alt = '';
-      art.draggable = false;
-      mark.className = 'room-mark';
-      mark.setAttribute('aria-hidden', 'true');
-      mark.textContent = symbol;
-      endpoint.append(art, mark);
+      endpoint.append(sprite(cart ? 'art/cart.webp' : 'art/painted-door.webp'));
+      if (cart) endpoint.append(accent('room-uniform'), accent('room-cart-color'));
       tile.append(endpoint);
-      label = (cart ? 'Pokojská u vozíku, ' : 'Dveře, ') + name + ', ' + label.toLocaleLowerCase('cs');
+      label = (cart ? 'Pokojská u vozíku, ' : 'Dveře, ') + colors[index].name + ' barva, ' + label.toLocaleLowerCase('cs');
     }
     tile.setAttribute('aria-label', label);
     return tile;
@@ -163,10 +170,10 @@
     board.inert = finished;
     threads.setAttribute('viewBox', `0 0 ${side} ${side}`);
     cells = Array.from({length: side * side}, (_, cell) => makeCell(cell));
-    drawn = uniforms.slice(0, pairs.length).map(([, , color]) => {
+    drawn = colors.slice(0, pairs.length).map(({ink}) => {
       const element = document.createElementNS(xmlns, 'polyline');
       element.classList.add('room-route');
-      element.style.setProperty('--pair-ink', color);
+      element.style.setProperty('--pair-ink', ink);
       return element;
     });
     tiles.replaceChildren(...cells);
@@ -178,7 +185,7 @@
     nextWalk.hidden = !finished;
     nextWalk.textContent = finished ? 'Nastoupit do výtahu' : 'Další obchůzka';
     lift.hidden = reward.hidden = !finished;
-    say(finished ? '„Všechno prádlo je na vozících. Tady je tlačítko 4, jedeme do prádelny.“' : prompts[round]);
+    say(finished ? handoff : prompts[round]);
     paint();
   }
 
@@ -322,11 +329,10 @@
     // Each housekeeper walks from the cart to the room, then brings the linen back.
     const fromCart = path[0] === pairs[index][0] ? path : [...path].reverse();
     const steps = [...fromCart, fromCart.at(-1), ...fromCart.slice(0, -1).reverse()];
-    const actor = new Image();
-    actor.src = 'art/maid.webp';
+    const actor = document.createElement('span');
     actor.className = 'room-walker';
-    actor.alt = '';
-    actor.style.setProperty('--uniform-tint', uniforms[index][3] + 'deg');
+    actor.style.setProperty('--pair-ink', colors[index].ink);
+    actor.append(sprite('art/maid.webp'), accent('room-uniform'));
     walkers.append(actor);
     return actor.animate(steps.map(cell => ({
       left: (cellX(cell) + .5) / side * 100 + '%',
@@ -359,8 +365,7 @@
     nextWalk.hidden = false;
     nextWalk.textContent = finished ? 'Nastoupit do výtahu' : 'Další obchůzka';
     lift.hidden = reward.hidden = !finished;
-    say(finished ? '„Všechno prádlo je na vozících. Tady je tlačítko 4, jedeme do prádelny.“'
-      : 'Prádlo je na vozících. A ani jednou se nepotkaly.');
+    say(finished ? handoff : 'Prádlo je na vozících. A ani jednou se nepotkaly.');
     nextWalk.focus({preventScroll: true});
   }
 
